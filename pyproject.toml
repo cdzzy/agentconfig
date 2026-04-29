@@ -23,7 +23,7 @@ requires-python = ">=3.10"
 dependencies = ["flask>=3.0"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pytest-cov"]
+dev = ["pytest>=8.0", "pytest-cov", "pyyaml>=6.0", "tomli-w>=1.0"]
 
 [project.scripts]
 agentconfig = "agentconfig.cli:main"
