@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AgentConfig — Dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.chart-bar-wrap { display:flex; flex-direction:column; gap:6px; }
+.chart-row { display:flex; align-items:center; gap:10px; font-size:12px; }
+.chart-label { width:110px; color:var(--muted); text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chart-track { flex:1; background:var(--bg3); border-radius:3px; height:10px; overflow:hidden; }
+.chart-fill  { height:100%; border-radius:3px; transition:width .5s ease; }
+.chart-count { width:36px; text-align:right; color:var(--muted); }
+
+.runs-timeline { display:flex; align-items:flex-end; gap:3px; height:60px; padding:4px 0; }
+.runs-bar { flex:1; background:var(--accent); border-radius:2px 2px 0 0; opacity:.7; min-height:2px; transition:.3s; cursor:pointer; }
+.runs-bar:hover { opacity:1; }
+
+.agent-row { display:grid; grid-template-columns:1fr 60px 60px 60px 60px; gap:8px; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.agent-row:last-child { border-bottom:none; }
+.agent-row .a-name { font-weight:600; }
+.agent-row .a-num  { text-align:center; color:var(--muted); }
+.agent-row .a-ok   { text-align:center; color:var(--success); }
+.agent-row .a-esc  { text-align:center; color:var(--warn); }
+.agent-row .a-err  { text-align:center; color:var(--danger); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="/"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Agent<span>Config</span></a>
+  <a href="/">Dashboard</a>
+  <a href="/configure">Configure</a>
+  <a href="/configs">My Configs</a>
+  <a href="/chat">Chat Demo</a>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>Monitoring Dashboard</h1>
+    <p>Real-time overview of all agent activity, constraint violations, and performance.</p>
+  </div>
+
+  <!-- Stats row -->
+  <div class="stat-grid" id="stat-grid">
+    <div class="stat-card accent"><div class="stat-val" id="s-total">—</div><div class="stat-lbl">Total Runs</div></div>
+    <div class="stat-card success"><div class="stat-val" id="s-ok">—</div><div class="stat-lbl">Completed</div></div>
+    <div class="stat-card warn"><div class="stat-val" id="s-esc">—</div><div class="stat-lbl">Escalated</div></div>
+    <div class="stat-card danger"><div class="stat-val" id="s-err">—</div><div class="stat-lbl">Errors</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-lat" style="color:var(--accent2)">—</div><div class="stat-lbl">Avg Latency</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-vio" style="color:var(--warn)">—</div><div class="stat-lbl">Violations</div></div>
+  </div>
+
+  <div class="two-col">
+    <!-- Left: Agents table -->
+    <div class="card">
+      <div class="card-title">Agent Performance</div>
+      <div class="agent-row" style="font-size:11px;color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--border);">
+        <span>Agent</span><span style="text-align:center">Total</span><span style="text-align:center">OK</span><span style="text-align:center">Esc</span><span style="text-align:center">Err</span>
+      </div>
+      <div id="agent-rows"><div class="empty-state"><div class="empty-icon">🤖</div>No agents yet</div></div>
+    </div>
+
+    <!-- Right: Violation breakdown -->
+    <div class="card">
+      <div class="card-title">Constraint Violations by Type</div>
+      <div id="violation-chart"><div class="empty-state"><div class="empty-icon">✅</div>No violations recorded</div></div>
+    </div>
+  </div>
+
+  <!-- Recent runs table -->
+  <div class="card" style="margin-top:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="card-title" style="margin-bottom:0">Recent Runs</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="loadData()">↻ Refresh</button>
+        <button class="btn btn-ghost" style="color:var(--danger)" onclick="clearRuns()">Clear</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Run ID</th><th>Agent</th><th>Status</th>
+          <th>Turns</th><th>Violations</th><th>Latency</th><th>Started</th>
+        </tr></thead>
+        <tbody id="runs-tbody"><tr><td colspan="7" class="empty-state">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="/static/utils.js"></script>
+<script>
+async function loadData() {
+  try {
+    const [statsRes, runsRes] = await Promise.all([
+      api('GET', '/api/stats'),
+      api('GET', '/api/runs?n=30'),
+    ]);
+
+    // Stats
+    const s = statsRes;
+    document.getElementById('s-total').textContent = s.total_runs;
+    document.getElementById('s-ok').textContent    = s.by_status.completed || 0;
+    document.getElementById('s-esc').textContent   = s.by_status.escalated || 0;
+    document.getElementById('s-err').textContent   = s.by_status.error     || 0;
+    document.getElementById('s-lat').textContent   = fmtMs(s.avg_latency_ms);
+    document.getElementById('s-vio').textContent   = s.total_violations;
+
+    // Agent rows
+    const agents = Object.entries(s.agents || {});
+    if (agents.length) {
+      document.getElementById('agent-rows').innerHTML = agents.map(([name, a]) => `
+        <div class="agent-row">
+          <span class="a-name">${esc(name)}</span>
+          <span class="a-num">${a.total}</span>
+          <span class="a-ok">${a.completed}</span>
+          <span class="a-esc">${a.escalated}</span>
+          <span class="a-err">${a.errors}</span>
+        </div>`).join('');
+    } else {
+      document.getElementById('agent-rows').innerHTML = '<div class="empty-state"><div class="empty-icon">🤖</div>No agents yet</div>';
+    }
+
+    // Violation chart
+    const vtypes = Object.entries(s.violation_by_type || {});
+    if (vtypes.length) {
+      const max = Math.max(...vtypes.map(([,v]) => v));
+      const colors = ['#6c63ff','#4ecca3','#f6ad55','#fc8181','#76e4f7','#b794f4'];
+      document.getElementById('violation-chart').innerHTML = `<div class="chart-bar-wrap">` +
+        vtypes.map(([type, count], i) => `
+          <div class="chart-row">
+            <div class="chart-label">${esc(type.replace(/_/g,' '))}</div>
+            <div class="chart-track"><div class="chart-fill" style="width:${Math.max(4, count/max*100)}%;background:${colors[i%colors.length]}"></div></div>
+            <div class="chart-count">${count}</div>
+          </div>`).join('') + `</div>`;
+    } else {
+      document.getElementById('violation-chart').innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div>No violations recorded</div>';
+    }
+
+    // Runs table
+    const runs = runsRes.runs || [];
+    if (runs.length) {
+      document.getElementById('runs-tbody').innerHTML = runs.map(r => `
+        <tr>
+          <td><code style="color:var(--accent2);font-size:11px">${esc(r.run_id)}</code></td>
+          <td>${esc(r.agent_name || '—')}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td style="text-align:center">${r.turn_count}</td>
+          <td style="text-align:center">${r.violation_count > 0
+            ? `<span class="badge badge-warn">${r.violation_count}</span>`
+            : '<span style="color:var(--muted)">0</span>'}</td>
+          <td>${fmtMs(r.total_latency_ms)}</td>
+          <td style="color:var(--muted)">${fmtDate(r.started_at)}</td>
+        </tr>`).join('');
+    } else {
+      document.getElementById('runs-tbody').innerHTML = '<tr><td colspan="7"><div class="empty-state">No runs yet</div></td></tr>';
+    }
+  } catch(e) {
+    toast('Failed to load data: ' + e.message, 'err');
+  }
+}
+
+async function clearRuns() {
+  if (!confirm('Clear all run history and reload demo data?')) return;
+  await api('POST', '/api/runs/clear');
+  toast('Run history cleared', 'ok');
+  loadData();
+}
+
+loadData();
+setInterval(loadData, 15000);  // auto-refresh every 15s
+</script>
+</body>
+</html>

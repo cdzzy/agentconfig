@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AgentConfig — My Configs</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+.config-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+.config-card {
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius);
+  padding:20px; transition:.15s; position:relative;
+}
+.config-card:hover { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+.config-card .c-name { font-size:15px; font-weight:700; margin-bottom:6px; }
+.config-card .c-desc { color:var(--muted); font-size:12px; margin-bottom:12px; line-height:1.5; min-height:36px; }
+.config-card .c-meta { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.config-card .c-actions { display:flex; gap:8px; }
+.config-card .c-id { font-size:10px; color:var(--muted); font-family:monospace; position:absolute; top:12px; right:14px; }
+
+/* Modal */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:200;
+  display:flex; align-items:center; justify-content:center;
+  animation: fadeIn .15s ease;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.modal {
+  background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius);
+  width:min(700px,95vw); max-height:90vh; overflow-y:auto; padding:28px;
+  box-shadow:var(--shadow);
+}
+.modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.modal-header h2 { font-size:16px; }
+.modal-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; line-height:1; }
+.modal-close:hover { color:var(--text); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="/"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Agent<span>Config</span></a>
+  <a href="/">Dashboard</a>
+  <a href="/configure">Configure</a>
+  <a href="/configs">My Configs</a>
+  <a href="/chat">Chat Demo</a>
+</nav>
+
+<div class="page">
+  <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
+    <div>
+      <h1>My Agent Configs</h1>
+      <p>All saved agent configurations. Click to inspect or test.</p>
+    </div>
+    <a class="btn btn-primary" href="/configure">+ New Config</a>
+  </div>
+
+  <div id="config-grid" class="config-grid">
+    <div class="empty-state" style="grid-column:1/-1;padding:60px 0">
+      <div class="empty-icon">⚙️</div>
+      <div>Loading configurations…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail modal -->
+<div id="modal" style="display:none"></div>
+
+<script src="/static/utils.js"></script>
+<script>
+async function loadConfigs() {
+  try {
+    const res = await api('GET', '/api/configs');
+    const configs = res.configs || [];
+    const grid = document.getElementById('config-grid');
+
+    if (!configs.length) {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1;padding:60px 0">
+          <div class="empty-icon">📋</div>
+          <div>No configs saved yet.</div>
+          <div style="margin-top:12px"><a class="btn btn-primary" href="/configure">Create your first agent config</a></div>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = configs.map(c => `
+      <div class="config-card">
+        <span class="c-id">${esc(c.config_id)}</span>
+        <div class="c-name">${esc(c.name)}</div>
+        <div class="c-desc">${esc(c.description || 'No description.')}</div>
+        <div class="c-meta">
+          ${domainBadge(c.domain)}
+          <span class="badge badge-muted">v${esc(c.version)}</span>
+          <span class="badge badge-muted" style="font-size:10px">${fmtDate(c.created_at)}</span>
+        </div>
+        <div class="c-actions">
+          <button class="btn btn-primary" style="flex:1" onclick="openModal('${esc(c.config_id)}')">Inspect</button>
+          <a class="btn btn-ghost" href="/chat?config_id=${esc(c.config_id)}">Test</a>
+          <button class="btn btn-ghost" style="color:var(--danger)" onclick="deleteConfig('${esc(c.config_id)}')">Delete</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    toast('Failed to load: ' + e.message, 'err');
+  }
+}
+
+async function openModal(configId) {
+  try {
+    const res = await api('GET', `/api/configs/${configId}`);
+    const cfg = res.config;
+    const intent = cfg.intent || {};
+
+    const modal = document.getElementById('modal');
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+      <div class="modal-overlay" onclick="if(event.target===this) closeModal()">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>${esc(cfg.name)}</h2>
+            <button class="modal-close" onclick="closeModal()">×</button>
+          </div>
+
+          <div class="two-col" style="gap:16px;margin-bottom:16px">
+            <div>
+              <div class="card-title">Identity</div>
+              <table style="width:100%;font-size:12px">
+                <tr><td style="color:var(--muted);padding:4px 0;width:110px">Config ID</td><td><code style="color:var(--accent2)">${esc(cfg.config_id)}</code></td></tr>
+                <tr><td style="color:var(--muted);padding:4px 0">Domain</td><td>${domainBadge(intent.domain||'general')}</td></tr>
+                <tr><td style="color:var(--muted);padding:4px 0">Tone</td><td>${(intent.tone||[]).map(t=>`<span class="badge badge-blue" style="margin-right:3px">${t}</span>`).join('')||'—'}</td></tr>
+                <tr><td style="color:var(--muted);padding:4px 0">Max turns</td><td>${cfg.max_turns}</td></tr>
+                <tr><td style="color:var(--muted);padding:4px 0">Audit</td><td>${cfg.audit_enabled?'<span class="badge badge-ok">On</span>':'<span class="badge badge-muted">Off</span>'}</td></tr>
+              </table>
+            </div>
+            <div>
+              <div class="card-title">Model</div>
+              <table style="width:100%;font-size:12px">
+                <tr><td style="color:var(--muted);padding:4px 0;width:110px">Provider</td><td>${esc(cfg.model?.provider||'—')}</td></tr>
+                <tr><td style="color:var(--muted);padding:4px 0">Model</td><td>${esc(cfg.model?.model||'—')}</td></tr>
+                <tr><td style="color:var(--muted);padding:4px 0">Temperature</td><td>${cfg.model?.temperature}</td></tr>
+                <tr><td style="color:var(--muted);padding:4px 0">Max tokens</td><td>${cfg.model?.max_tokens}</td></tr>
+              </table>
+            </div>
+          </div>
+
+          ${cfg.system_prompt ? `
+          <div style="margin-bottom:16px">
+            <div class="card-title">System Prompt</div>
+            <div class="preview-wrap" style="font-family:inherit;color:var(--text);font-size:12px">${esc(cfg.system_prompt)}</div>
+          </div>` : ''}
+
+          ${(cfg.constraints||[]).length ? `
+          <div style="margin-bottom:16px">
+            <div class="card-title">Constraints (${cfg.constraints.length})</div>
+            ${cfg.constraints.map(c=>`
+              <div style="display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
+                <span class="badge badge-warn">${c.type.replace(/_/g,' ')}</span>
+                <span class="badge badge-err">${c.action}</span>
+                <span>${esc(c.description)}</span>
+              </div>`).join('')}
+          </div>` : ''}
+
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <a class="btn btn-primary" href="/chat?config_id=${esc(cfg.config_id)}">Test in Chat</a>
+            <button class="btn btn-ghost" onclick="copyConfigJson(${JSON.stringify(JSON.stringify(cfg))})">Copy JSON</button>
+          </div>
+        </div>
+      </div>`;
+  } catch(e) {
+    toast('Failed to load config: ' + e.message, 'err');
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+
+function copyConfigJson(jsonStr) {
+  navigator.clipboard.writeText(jsonStr);
+  toast('Copied to clipboard', 'ok');
+}
+
+async function deleteConfig(configId) {
+  if (!confirm('Delete this config? This cannot be undone.')) return;
+  try {
+    await api('DELETE', `/api/configs/${configId}`);
+    toast('Deleted', 'ok');
+    loadConfigs();
+  } catch(e) {
+    toast('Delete failed: ' + e.message, 'err');
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+loadConfigs();
+</script>
+</body>
+</html>

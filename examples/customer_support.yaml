@@ -1,0 +1,88 @@
+# AgentConfig YAML Example — Customer Support Bot
+# This file demonstrates YAML format configuration with IDE autocomplete.
+# For autocomplete in VS Code, add to .vscode/settings.json:
+#   "yaml.schemas": {
+#     "schemas/agent-config.schema.json": "examples/*.yaml"
+#   }
+
+name: Customer Support Bot
+version: "1.0.0"
+description: "Handles customer complaints politely. Never mentions pricing or competitor products."
+
+system_prompt: ""
+
+intent:
+  name: Customer Support Bot
+  purpose: "Handle customer complaints and support requests"
+  audience: "Customers with product issues"
+  domain: customer_service
+  tone:
+    - friendly
+    - empathetic
+  language: auto
+  actions_allowed:
+    - answer product questions
+    - process refund requests
+    - escalate to human
+  actions_forbidden:
+    - reveal internal pricing
+    - discuss competitor products
+  topics_forbidden:
+    - pricing
+    - competitor products
+  escalation_triggers:
+    - customer asks for refund over $500
+    - customer becomes angry
+  max_turns: 20
+  require_confirmation:
+    - processing refund
+  goals:
+    - resolve customer issue within 3 turns
+    - maintain positive sentiment
+
+model:
+  provider: openai
+  model: gpt-4o-mini
+  temperature: 0.5
+  max_tokens: 1024
+  top_p: 1.0
+  timeout_seconds: 30
+  api_base: null
+
+constraints:
+  - id: no-pricing
+    type: forbidden_keyword
+    description: "Never reveal pricing information"
+    keywords: ["price", "cost", "$", "fee", "charge"]
+    action: block
+    fallback_message: "I'm sorry, I can't discuss pricing. Please contact our sales team."
+    pattern: ""
+    max_chars: 0
+    min_chars: 0
+  - id: max-response-length
+    type: max_length
+    description: "Keep responses concise"
+    max_chars: 500
+    action: warn
+    fallback_message: ""
+    keywords: []
+    pattern: ""
+    min_chars: 0
+
+tools_enabled:
+  - web_search
+  - calculator
+
+tools_disabled:
+  - file_write
+  - code_execute
+
+max_turns: 20
+stream: false
+log_enabled: true
+audit_enabled: true
+
+metadata:
+  department: support
+  owner: support-team@company.com
+  environment: production

@@ -1,0 +1,68 @@
+# A2A-enabled Research Agent with MCP tools
+name: "ResearchAgent"
+version: "1.0.0"
+description: "Web researcher with MCP tool integration and A2A discovery"
+
+system_prompt: "You are a research agent that can search the web and read files."
+
+# LLM model
+model:
+  provider: "anthropic"
+  model: "claude-3-5-sonnet-20241022"
+  temperature: 0.3
+  max_tokens: 4096
+
+# Tools
+tools_enabled:
+  - web_search
+  - calculator
+
+# MCP servers
+mcp_servers:
+  - name: "web-search"
+    command: "npx"
+    args: ["-y", "@anthropic/mcp-server-brave"]
+    env:
+      BRAVE_API_KEY: "${BRAVE_API_KEY}"
+    tools:
+      - brave_web_search
+      - brave_suggest
+
+  - name: "filesystem"
+    command: "npx"
+    args: ["-y", "@anthropic/mcp-server-filesystem", "/data"]
+    tools:
+      - read_file
+      - write_file
+
+# Tool policy
+tool_policy:
+  allowed_tools:
+    - "web-search:brave_web_search"
+    - "web-search:brave_suggest"
+    - "filesystem:read_file"
+  blocked_tools:
+    - "filesystem:write_file"
+  auto_approve: true
+
+# Constraints
+constraints:
+  - id: "no-pricing"
+    type: "forbidden_keyword"
+    description: "Never discuss pricing or costs"
+    keywords: ["price", "cost", "pricing"]
+    action: "block"
+  - id: "max-length"
+    type: "max_length"
+    description: "Keep responses concise"
+    max_chars: 500
+    action: "warn"
+
+max_turns: 25
+stream: true
+log_enabled: true
+audit_enabled: true
+
+metadata:
+  a2a_endpoint: "https://research.example.com"
+  environment: "production"
