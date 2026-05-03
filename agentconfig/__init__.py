@@ -16,6 +16,7 @@ from agentconfig.validation import validate_config, validate_dict, ValidationRes
 from agentconfig.loader import load_config, save_config, list_formats
 from agentconfig.a2a import A2ACard, A2ASkill, generate_a2a_card
 from agentconfig.mcp import MCPServerConfig, ToolPolicy, MCPRouter
+from agentconfig.portable import AgentDir, load_agent_dir, save_agent_dir, init_agent_dir
 
 __all__ = [
     "IntentParser",
@@ -41,4 +42,8 @@ __all__ = [
     "MCPServerConfig",
     "ToolPolicy",
     "MCPRouter",
+    "AgentDir",
+    "load_agent_dir",
+    "save_agent_dir",
+    "init_agent_dir",
 ]

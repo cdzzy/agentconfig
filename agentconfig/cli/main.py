@@ -6,6 +6,7 @@ Usage:
     agentconfig create [--template TEMPLATE] [--output FILE]
     agentconfig validate [--config FILE]
     agentconfig list-templates
+    agentconfig init [--path DIR] [--name NAME]
 """
 
 import argparse
@@ -498,6 +499,39 @@ def cmd_import_skill(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_init(args: argparse.Namespace) -> int:
+    """Initialize a .agent/ portable directory with the standard layout."""
+    from ..portable import init_agent_dir, AgentDir
+    from ..semantic.config_gen import AgentConfig
+
+    target = args.path or "."
+    name = args.name or "My Agent"
+
+    agent_dir_path = Path(target) / ".agent"
+
+    if agent_dir_path.exists() and any(agent_dir_path.iterdir()):
+        print(f"Error: {agent_dir_path} already exists and is not empty", file=sys.stderr)
+        print("Use --force to overwrite existing files.", file=sys.stderr)
+        return 1
+
+    config = AgentConfig(name=name)
+    agent_dir = init_agent_dir(target, config=config, with_defaults=True)
+
+    print(f"✅ Initialized .agent/ directory at {agent_dir.path.absolute()}")
+    print(f"   Agent name: {name}")
+    print(f"   Config: {agent_dir.path / 'config.yaml'}")
+    print(f"   Memory: {agent_dir.path / 'memory/'}")
+    print(f"   Skills: {agent_dir.path / 'skills/'}")
+    print(f"   Protocols: {agent_dir.path / 'protocols/'}")
+    print()
+    print("Next steps:")
+    print("  1. Edit .agent/config.yaml to configure your agent")
+    print("  2. Add skills:  agentconfig add-skill --name <skill>")
+    print("  3. Use with Claude Code, Cursor, or any agentic-stack compatible tool")
+
+    return 0
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser."""
     parser = argparse.ArgumentParser(
@@ -590,7 +624,23 @@ def create_parser() -> argparse.ArgumentParser:
         "--output", "-o",
         help="Output file path (default: print to stdout)",
     )
-    
+
+    # init command
+    init_parser = subparsers.add_parser(
+        "init",
+        help="Initialize a .agent/ portable directory",
+    )
+    init_parser.add_argument(
+        "--path", "-p",
+        default=".",
+        help="Path to project directory (default: current directory)",
+    )
+    init_parser.add_argument(
+        "--name", "-n",
+        default="My Agent",
+        help="Agent name (default: My Agent)",
+    )
+
     return parser
 
 
@@ -610,6 +660,7 @@ def cli(args: Optional[list] = None) -> int:
         "list-templates": cmd_list_templates,
         "export": cmd_export,
         "import-skill": cmd_import_skill,
+        "init": cmd_init,
     }
     
     handler = commands.get(parsed_args.command)
