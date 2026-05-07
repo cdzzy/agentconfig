@@ -217,9 +217,33 @@ python -m agentconfig.ui
 - [x] 研究型智能体模板（research-agent，参考 AI-Scientist 模式）
 - [x] LangChain/LangGraph/OpenAI 格式导出
 - [x] MCP 工具定义格式导出
-- [ ] A2A（Agent2Agent）Card 导出
+- [x] `.\agent/` 便携目录规范（[docs/AGENT_SPEC.md](docs/AGENT_SPEC.md)）
+- [x] SKILL.md 导入兼容（SkillImporter）
+- [x] A2A（Agent2Agent）Card 导出
 - [ ] 配置模板市场（社区共享）
 - [ ] 自动重要性评分（LLM Judge）
+
+---
+
+## `.\agent/` 便携目录规范
+
+agentconfig 实现了 `.\agent/` 目录标准——一个可被 Claude Code、Cursor、Windsurf 等工具共享的 Agent 配置规范。
+
+详细规范请参阅：[`docs/AGENT_SPEC.md`](docs/AGENT_SPEC.md)
+
+```python
+from agentconfig.portable import load_agent_dir, save_agent_dir, AgentDir
+
+# 加载 .agent/ 目录
+config = load_agent_dir('.agent/')
+
+# 导出到 .agent/ 目录
+save_agent_dir(config, '.agent/')
+
+# 导入 SKILL.md
+from agentconfig.importers.skill_seeker import import_skill
+config_dict = import_skill('skills/research/SKILL.md')
+```
 
 ---
 

@@ -4,7 +4,7 @@ AgentConfig — Business-semantic driven Agent configuration system.
 The missing layer between business users and AI agents.
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 __author__ = "cdzzy"
 
 from agentconfig.semantic.intent import IntentParser, AgentIntent
