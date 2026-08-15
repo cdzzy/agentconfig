@@ -119,14 +119,8 @@ def _save_yaml(config: AgentConfig, path: str) -> None:
 
 def _save_toml(config: AgentConfig, path: str) -> None:
     """Save config as TOML."""
-    try:
-        import tomli_w  # Third-party TOML writer
-    except ImportError:
-        raise ImportError(
-            "TOML write support requires 'tomli_w'. Install with: pip install tomli-w"
-        )
-    with open(path, "wb") as f:
-        tomli_w.dump(config.to_dict(), f)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(config.to_toml())
 
 
 _SAVERS = {

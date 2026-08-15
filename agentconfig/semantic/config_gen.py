@@ -18,6 +18,15 @@ from agentconfig.semantic.intent import AgentIntent
 from agentconfig.semantic.constraint import ConstraintEngine, Constraint, ConstraintType, ConstraintAction
 
 
+def _strip_none(obj: Any) -> Any:
+    """Recursively remove None values (TOML has no null type)."""
+    if isinstance(obj, dict):
+        return {k: _strip_none(v) for k, v in obj.items() if v is not None}
+    if isinstance(obj, list):
+        return [_strip_none(v) for v in obj if v is not None]
+    return obj
+
+
 @dataclass
 class ModelConfig:
     """LLM model configuration."""
@@ -155,6 +164,103 @@ class AgentConfig:
     @classmethod
     def from_json(cls, s: str) -> "AgentConfig":
         return cls.from_dict(json.loads(s))
+
+    @classmethod
+    def from_yaml(cls, s: str) -> "AgentConfig":
+        """
+        Parse an AgentConfig from a YAML string.
+
+        Args:
+            s: YAML document string.
+
+        Returns:
+            AgentConfig instance.
+
+        Raises:
+            ImportError: If 'pyyaml' is not installed.
+            ValueError: If the YAML root is not a mapping.
+
+        Example::
+
+            config = AgentConfig.from_yaml("name: SupportAgent\\nrole: Support")
+        """
+        try:
+            import yaml
+        except ImportError:
+            raise ImportError(
+                "YAML support requires 'pyyaml'. Install with: pip install pyyaml"
+            )
+        data = yaml.safe_load(s)
+        if not isinstance(data, dict):
+            raise ValueError(f"YAML must contain a mapping, got {type(data).__name__}")
+        return cls.from_dict(data)
+
+    @classmethod
+    def from_toml(cls, s: str) -> "AgentConfig":
+        """
+        Parse an AgentConfig from a TOML string.
+
+        Args:
+            s: TOML document string.
+
+        Returns:
+            AgentConfig instance.
+
+        Raises:
+            ImportError: If TOML support is unavailable (Python < 3.11 without 'tomli').
+
+        Example::
+
+            config = AgentConfig.from_toml('name = "SupportAgent"')
+        """
+        try:
+            import tomllib  # Python 3.11+
+        except ImportError:
+            try:
+                import tomli as tomllib  # Python < 3.11
+            except ImportError:
+                raise ImportError(
+                    "TOML support requires Python 3.11+ or 'tomli'. Install with: pip install tomli"
+                )
+        data = tomllib.loads(s)
+        if not isinstance(data, dict):
+            raise ValueError(f"TOML must contain a mapping, got {type(data).__name__}")
+        return cls.from_dict(data)
+
+    def to_yaml(self) -> str:
+        """
+        Serialize this AgentConfig to a YAML string.
+
+        Raises:
+            ImportError: If 'pyyaml' is not installed.
+        """
+        try:
+            import yaml
+        except ImportError:
+            raise ImportError(
+                "YAML support requires 'pyyaml'. Install with: pip install pyyaml"
+            )
+        return yaml.dump(
+            self.to_dict(),
+            default_flow_style=False,
+            allow_unicode=True,
+            sort_keys=False,
+        )
+
+    def to_toml(self) -> str:
+        """
+        Serialize this AgentConfig to a TOML string.
+
+        Raises:
+            ImportError: If 'tomli-w' is not installed.
+        """
+        try:
+            import tomli_w
+        except ImportError:
+            raise ImportError(
+                "TOML write support requires 'tomli_w'. Install with: pip install tomli-w"
+            )
+        return tomli_w.dumps(_strip_none(self.to_dict()))
 
     def save(self, path: str) -> None:
         with open(path, "w", encoding="utf-8") as f:

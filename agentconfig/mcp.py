@@ -44,8 +44,34 @@ References:
 from __future__ import annotations
 
 import json
+import os
+import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
+
+_ENV_PATTERN = re.compile(r"\$\{([^}]+)\}")
+
+
+def substitute_env(value: str, env: Optional[Dict[str, str]] = None) -> str:
+    """
+    Substitute ``${VAR}`` placeholders in a string with environment values.
+
+    Unknown variables are left unchanged (so secrets are never silently lost).
+
+    Args:
+        value: String possibly containing ``${VAR}`` placeholders.
+        env: Optional env mapping (defaults to ``os.environ``).
+
+    Example::
+
+        substitute_env("Bearer ${API_KEY}")  # -> "Bearer sk-..."
+    """
+    source = env if env is not None else os.environ
+
+    def _repl(m: "re.Match[str]") -> str:
+        return source.get(m.group(1), m.group(0))
+
+    return _ENV_PATTERN.sub(_repl, value)
 
 
 @dataclass
@@ -93,6 +119,30 @@ class MCPServerConfig:
             description=d.get("description", ""),
             tools=d.get("tools", []),
         )
+
+    def resolve_env(self, env: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+        """
+        Resolve ``${VAR}`` placeholders in this server's env dict.
+
+        Args:
+            env: Optional env mapping (defaults to ``os.environ``).
+
+        Returns:
+            A new dict with placeholders replaced by their values.
+        """
+        return {k: substitute_env(v, env) for k, v in self.env.items()}
+
+    def resolve_args(self, env: Optional[Dict[str, str]] = None) -> List[str]:
+        """
+        Resolve ``${VAR}`` placeholders in this server's args list.
+
+        Args:
+            env: Optional env mapping (defaults to ``os.environ``).
+
+        Returns:
+            A new list with placeholders replaced by their values.
+        """
+        return [substitute_env(a, env) for a in self.args]
 
 
 @dataclass

@@ -4,7 +4,7 @@
 
 > Business people know what they want their agent to do. They just shouldn't need to write Python to say it.
 
-[![Tests](https://img.shields.io/badge/tests-47%20passed-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-179%20passed-brightgreen)](tests/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -200,19 +200,102 @@ Works with OpenAI, Anthropic, Ollama, or any LLM with a compatible interface.
 ```bash
 pip install pytest
 pytest tests/ -v
-# 47 passed
+# 179 passed
+```
+
+---
+
+## Multi-Format Configs
+
+AgentConfig supports JSON, YAML, and TOML out of the box:
+
+```python
+config = AgentConfig(name="SupportAgent", max_turns=30)
+
+# Serialize to any format
+json_str = config.to_json()
+yaml_str = config.to_yaml()
+toml_str = config.to_toml()
+
+# Parse from any format
+config = AgentConfig.from_json(json_str)
+config = AgentConfig.from_yaml(yaml_str)
+config = AgentConfig.from_toml(toml_str)
+```
+
+Or use the file-oriented loader:
+
+```python
+from agentconfig import load_config, save_config
+
+config = load_config("agent.yaml")   # auto-detects format
+save_config(config, "agent.toml")    # re-save in another format
+```
+
+---
+
+## Config Versioning
+
+Track, diff, and roll back config changes — Git-style workflows for agent configs:
+
+```python
+from agentconfig import ConfigVersionManager, AgentConfig
+
+manager = ConfigVersionManager()
+manager.commit(AgentConfig(name="ResearchAgent"), "Initial setup")
+manager.commit(AgentConfig(name="ResearchAgent", max_turns=50), "Bumped turns")
+
+for v in manager.history():
+    print(v.id, v.message)          # v1 Initial setup / v2 Bumped turns
+
+print(manager.diff("v1", "v2"))     # unified diff
+older = manager.rollback("v1")      # reconstruct a previous config
+```
+
+---
+
+## Hot-Reload
+
+Apply config changes without restarting your agent:
+
+```python
+from agentconfig import watch_config
+
+watcher = watch_config("agent.yaml", on_change=lambda cfg: agent.update(cfg))
+watcher.start()
+# edit agent.yaml → callback fires automatically
+watcher.stop()
+```
+
+Or expose a runtime REST API for production config updates:
+
+```python
+from agentconfig import RuntimeConfigStore, create_reload_blueprint
+from flask import Flask
+
+store = RuntimeConfigStore()
+app = Flask(__name__)
+app.register_blueprint(create_reload_blueprint(store), url_prefix="/api")
+
+# PUT   /api/agents/<id>/config      partial config update
+# GET   /api/agents/<id>/config      fetch current config
+# GET   /api/agents/<id>/history     version history
+# POST  /api/agents/<id>/rollback    roll back to a version
 ```
 
 ---
 
 ## Roadmap
 
-- [ ] CLI: `agentconfig serve --config my_agent.json`
+- [x] CLI: `agentconfig serve` and `agentconfig watch` (hot-reload)
 - [ ] LangGraph / AutoGen / CrewAI adapter plugins
 - [ ] LLM-as-judge constraint (semantic violation detection)
-- [ ] Config versioning and diff view
+- [x] **Config versioning and diff view** (commit / diff / rollback / history)
+- [x] **YAML/TOML config support** (`from_yaml` / `from_toml` / `to_yaml` / `to_toml`)
+- [x] **JSON Schema validation** (`agentconfig validate` for JSON/YAML/TOML)
+- [x] **MCP tool declarations** with env-var substitution (`${VAR}`)
 - [x] ~~Export to LangChain prompt template format~~ ✅
-- [x] **A2A Protocol export** (export agent as A2A Agent Card — for inter-agent discovery, inspired by a2a-protocol.org)
+- [x] **A2A Protocol export** (`agentconfig export-a2a`)
 - [x] ~~Skill Seekers import~~ ✅ (import from Claude Skills/SKILL.md)
 - [ ] Team/organization config sharing
 

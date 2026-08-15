@@ -25,34 +25,13 @@ purpose = "Answer general health and wellness questions"
 audience = "People seeking health information"
 domain = "general"
 language = "auto"
-
-[intent]
 tone = ["empathetic", "concise"]
-
-[[intent.actions_allowed]]
-"0" = "answer general health questions"
-"1" = "provide wellness tips"
-
-[[intent.actions_forbidden]]
-"0" = "provide medical diagnosis"
-"1" = "prescribe medication"
-
-[[intent.topics_forbidden]]
-"0" = "specific drug dosages"
-"1" = "medical diagnosis"
-
-[[intent.escalation_triggers]]
-"0" = "user describes severe symptoms"
-"1" = "user asks about prescription drugs"
-
-[[intent.require_confirmation]]
-"0" = "sharing personal health information"
-
-[[intent.goals]]
-"0" = "provide helpful general health information"
-"1" = "always recommend consulting a doctor"
-
-[intent]
+actions_allowed = ["answer general health questions", "provide wellness tips"]
+actions_forbidden = ["provide medical diagnosis", "prescribe medication"]
+topics_forbidden = ["specific drug dosages", "medical diagnosis"]
+escalation_triggers = ["user describes severe symptoms", "user asks about prescription drugs"]
+require_confirmation = ["sharing personal health information"]
+goals = ["provide helpful general health information", "always recommend consulting a doctor"]
 max_turns = 15
 
 [model]
@@ -70,9 +49,6 @@ description = "Never provide medical diagnosis"
 keywords = ["diagnose", "diagnosis", "you have", "you are suffering from"]
 action = "block"
 fallback_message = "I'm not able to provide a diagnosis. Please consult a healthcare professional."
-pattern = ""
-max_chars = 0
-min_chars = 0
 
 [[constraints]]
 id = "require-disclaimer"
@@ -80,7 +56,3 @@ type = "required_keyword"
 description = "Must include medical disclaimer"
 keywords = ["consult a doctor", "healthcare professional", "not medical advice"]
 action = "warn"
-fallback_message = ""
-pattern = ""
-max_chars = 0
-min_chars = 0

@@ -26,6 +26,27 @@ def _load_schema() -> dict:
         return json.load(f)
 
 
+def get_schema() -> dict:
+    """
+    Return the AgentConfig JSON Schema as a dict.
+
+    Exposing the schema enables IDE autocomplete (VS Code / PyCharm via
+    ``$schema``) and programmatic validation in CI/CD pipelines.
+
+    Example::
+
+        from agentconfig.validation import get_schema
+        schema = get_schema()
+        print(schema["title"])
+    """
+    return _load_schema()
+
+
+def schema_file() -> str:
+    """Return the absolute path to the bundled JSON Schema file."""
+    return str(_AGENT_CONFIG_SCHEMA)
+
+
 # ── Data structures ──────────────────────────────────────────────────────
 
 @dataclass

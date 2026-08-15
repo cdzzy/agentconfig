@@ -6,12 +6,15 @@ Usage:
     agentconfig create [--template TEMPLATE] [--output FILE]
     agentconfig validate [--config FILE]
     agentconfig list-templates
+    agentconfig export-a2a [--config FILE] [--output FILE]
     agentconfig init [--path DIR] [--name NAME]
+    agentconfig watch [--config FILE] [--interval SECONDS]
 """
 
 import argparse
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -156,46 +159,88 @@ def cmd_create(args: argparse.Namespace) -> int:
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
-    """Validate an existing configuration file."""
+    """Validate a configuration file against the JSON Schema."""
+    from ..validation import validate_config
+
     config_file = args.config
-    
+
     if not config_file:
         print("Error: --config is required for validation", file=sys.stderr)
         return 1
-    
+
     config_path = Path(config_file)
     if not config_path.exists():
         print(f"Error: Configuration file not found: {config_file}", file=sys.stderr)
         return 1
-    
-    try:
-        data = json.loads(config_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON in configuration file: {e}", file=sys.stderr)
+
+    result = validate_config(str(config_path))
+
+    if not result.valid:
+        print(f"❌ Configuration is invalid: {config_path.absolute()}", file=sys.stderr)
+        for err in result.errors:
+            print(f"   [{err.path}] {err.message}", file=sys.stderr)
         return 1
-    
-    # Validate required fields
-    required_fields = ["name", "system_prompt"]
-    missing = [f for f in required_fields if f not in data]
-    if missing:
-        print(f"Error: Missing required fields: {', '.join(missing)}", file=sys.stderr)
-        return 1
-    
-    # Validate constraints
-    if "constraints" in data:
-        engine = ConstraintEngine()
-        for i, c in enumerate(data["constraints"]):
-            if "type" not in c:
-                print(f"Error: Constraint {i} missing 'type' field", file=sys.stderr)
-                return 1
-            if "action" not in c:
-                print(f"Error: Constraint {i} missing 'action' field", file=sys.stderr)
-                return 1
-    
+
     print(f"✅ Configuration is valid: {config_path.absolute()}")
-    print(f"   Name: {data['name']}")
-    print(f"   Constraints: {len(data.get('constraints', []))}")
-    
+    return 0
+
+
+def cmd_export_a2a(args: argparse.Namespace) -> int:
+    """Export a configuration as a Google A2A Agent Card."""
+    from ..loader import load_config
+    from ..a2a import generate_a2a_card
+
+    config_file = args.config
+    config_path = Path(config_file)
+    if not config_path.exists():
+        print(f"Error: Configuration file not found: {config_file}", file=sys.stderr)
+        return 1
+
+    config = load_config(str(config_path))
+    card = generate_a2a_card(
+        config,
+        endpoint=args.endpoint or "",
+        api_version=args.api_version,
+        documentation_url=args.docs or "",
+        provider={"organization": args.provider} if args.provider else None,
+    )
+
+    if args.output:
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        card.save(str(output_path))
+        print(f"✅ A2A Agent Card exported to: {output_path.absolute()}")
+    else:
+        print(card.to_json())
+
+    return 0
+
+
+def cmd_watch(args: argparse.Namespace) -> int:
+    """Watch a config file and log changes (hot-reload)."""
+    from ..hotreload import watch_config
+
+    config_path = Path(args.config)
+    if not config_path.exists():
+        print(f"Error: Configuration file not found: {config_path}", file=sys.stderr)
+        return 1
+
+    print(f"Watching {config_path.absolute()} for changes (Ctrl+C to stop)...")
+
+    def _on_change(config):
+        print(f"[{datetime.now(timezone.utc).isoformat()}] Config changed → {config.name} (v{config.version})")
+
+    watcher = watch_config(str(config_path), on_change=_on_change, poll_interval=args.interval)
+    watcher.start()
+
+    try:
+        while True:
+            import time
+            time.sleep(1)
+    except KeyboardInterrupt:
+        watcher.stop()
+        print("\nStopped watching.")
+
     return 0
 
 
@@ -641,6 +686,58 @@ def create_parser() -> argparse.ArgumentParser:
         help="Agent name (default: My Agent)",
     )
 
+    # export-a2a command
+    export_a2a_parser = subparsers.add_parser(
+        "export-a2a",
+        help="Export a configuration as a Google A2A Agent Card",
+    )
+    export_a2a_parser.add_argument(
+        "--config", "-c",
+        required=True,
+        help="Path to configuration file (JSON/YAML/TOML)",
+    )
+    export_a2a_parser.add_argument(
+        "--output", "-o",
+        help="Output file path (default: print to stdout)",
+    )
+    export_a2a_parser.add_argument(
+        "--endpoint",
+        default="",
+        help="Public endpoint URL of the agent",
+    )
+    export_a2a_parser.add_argument(
+        "--api-version",
+        default="a2a/v1",
+        help="A2A protocol version (default: a2a/v1)",
+    )
+    export_a2a_parser.add_argument(
+        "--docs",
+        default="",
+        help="Documentation URL for the agent",
+    )
+    export_a2a_parser.add_argument(
+        "--provider",
+        default="",
+        help="Provider organization name",
+    )
+
+    # watch command
+    watch_parser = subparsers.add_parser(
+        "watch",
+        help="Watch a config file for changes (hot-reload)",
+    )
+    watch_parser.add_argument(
+        "--config", "-c",
+        required=True,
+        help="Path to configuration file to watch",
+    )
+    watch_parser.add_argument(
+        "--interval",
+        type=float,
+        default=1.0,
+        help="Polling interval in seconds (default: 1.0)",
+    )
+
     return parser
 
 
@@ -659,8 +756,10 @@ def cli(args: Optional[list] = None) -> int:
         "validate": cmd_validate,
         "list-templates": cmd_list_templates,
         "export": cmd_export,
+        "export-a2a": cmd_export_a2a,
         "import-skill": cmd_import_skill,
         "init": cmd_init,
+        "watch": cmd_watch,
     }
     
     handler = commands.get(parsed_args.command)
@@ -673,7 +772,17 @@ def cli(args: Optional[list] = None) -> int:
 
 def main():
     """Entry point for console scripts."""
+    _configure_utf8_output()
     sys.exit(cli())
+
+
+def _configure_utf8_output() -> None:
+    """Reconfigure stdio to UTF-8 (Windows consoles default to cp936/gbk)."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")
+        except (AttributeError, ValueError):
+            pass
 
 
 if __name__ == "__main__":

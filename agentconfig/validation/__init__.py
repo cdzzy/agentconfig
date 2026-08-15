@@ -14,6 +14,20 @@ Usage::
             print(f"  {err.path}: {err.message}")
 """
 
-from agentconfig.validation.validator import validate_config, validate_dict, ValidationResult, ValidationError
+from agentconfig.validation.validator import (
+    validate_config,
+    validate_dict,
+    get_schema,
+    schema_file,
+    ValidationResult,
+    ValidationError,
+)
 
-__all__ = ["validate_config", "validate_dict", "ValidationResult", "ValidationError"]
+__all__ = [
+    "validate_config",
+    "validate_dict",
+    "get_schema",
+    "schema_file",
+    "ValidationResult",
+    "ValidationError",
+]

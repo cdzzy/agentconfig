@@ -4,7 +4,7 @@ AgentConfig — Business-semantic driven Agent configuration system.
 The missing layer between business users and AI agents.
 """
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 __author__ = "cdzzy"
 
 from agentconfig.semantic.intent import IntentParser, AgentIntent
@@ -12,11 +12,13 @@ from agentconfig.semantic.constraint import ConstraintEngine, Constraint, Constr
 from agentconfig.semantic.config_gen import ConfigGenerator, AgentConfig
 from agentconfig.runtime.executor import AgentExecutor
 from agentconfig.runtime.monitor import AgentMonitor, RunRecord
-from agentconfig.validation import validate_config, validate_dict, ValidationResult, ValidationError
+from agentconfig.validation import validate_config, validate_dict, get_schema, ValidationResult, ValidationError
 from agentconfig.loader import load_config, save_config, list_formats
 from agentconfig.a2a import A2ACard, A2ASkill, generate_a2a_card
-from agentconfig.mcp import MCPServerConfig, ToolPolicy, MCPRouter
+from agentconfig.mcp import MCPServerConfig, ToolPolicy, MCPRouter, substitute_env
 from agentconfig.portable import AgentDir, load_agent_dir, save_agent_dir, init_agent_dir
+from agentconfig.versioning import ConfigVersionManager, ConfigVersion, diff_configs, diff_dicts
+from agentconfig.hotreload import ConfigWatcher, watch_config, RuntimeConfigStore, create_reload_blueprint
 
 __all__ = [
     "IntentParser",
@@ -31,6 +33,7 @@ __all__ = [
     "RunRecord",
     "validate_config",
     "validate_dict",
+    "get_schema",
     "ValidationResult",
     "ValidationError",
     "load_config",
@@ -42,8 +45,17 @@ __all__ = [
     "MCPServerConfig",
     "ToolPolicy",
     "MCPRouter",
+    "substitute_env",
     "AgentDir",
     "load_agent_dir",
     "save_agent_dir",
     "init_agent_dir",
+    "ConfigVersionManager",
+    "ConfigVersion",
+    "diff_configs",
+    "diff_dicts",
+    "ConfigWatcher",
+    "watch_config",
+    "RuntimeConfigStore",
+    "create_reload_blueprint",
 ]
