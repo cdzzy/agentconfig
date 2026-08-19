@@ -287,8 +287,8 @@
         },
         "type": {
           "type": "string",
-          "description": "Type of constraint.",
-          "enum": ["forbidden_topic", "forbidden_keyword", "max_length", "min_length", "required_keyword", "tone_check", "escalation", "custom"]
+          "description": "Type of constraint. 'semantic_judge' evaluates responses with an LLM judge (judge function attached in code, not serialized).",
+          "enum": ["forbidden_topic", "forbidden_keyword", "max_length", "min_length", "required_keyword", "tone_check", "escalation", "semantic_judge", "custom"]
         },
         "description": {
           "type": "string",

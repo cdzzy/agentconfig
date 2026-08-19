@@ -2,6 +2,18 @@
 
 All notable changes to AgentConfig are documented in this file.
 
+## [2.1.0] - 2026-08-19
+
+### Added
+
+- **LLM-as-judge semantic constraints**: `LLMJudge` wraps any `(prompt) -> str` callable into a semantic rule evaluator; `semantic_judge_constraint()` builds constraints that catch paraphrases, hints, and indirect violations keyword lists miss. Fail-open on judge outages; verdict parsing tolerates markdown fences.
+
+### Changed
+
+- `ConstraintEngine.from_list` accepts live `Constraint` objects alongside dicts, so `judge_fn`/`check_fn` callables survive an engine rebuild inside `AgentExecutor`.
+- `AgentConfig.to_dict` serializes live `Constraint` objects in `constraints`.
+- JSON Schema: `semantic_judge` added to the constraint type enum.
+
 ## [2.0.0] - 2026-08-15
 
 ### Added

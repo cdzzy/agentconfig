@@ -14,7 +14,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional, Callable
+from typing import TYPE_CHECKING, List, Optional, Callable
+
+if TYPE_CHECKING:  # pragma: no cover - import cycle guard
+    from agentconfig.semantic.judge import JudgeFunction
 
 
 class ConstraintType(str, Enum):
@@ -25,6 +28,7 @@ class ConstraintType(str, Enum):
     REQUIRED_KEYWORD   = "required_keyword"
     TONE_CHECK         = "tone_check"
     ESCALATION         = "escalation"
+    SEMANTIC_JUDGE     = "semantic_judge"
     CUSTOM             = "custom"
 
 
@@ -60,6 +64,7 @@ class Constraint:
     max_chars: int = 0                                   # for MAX_LENGTH
     min_chars: int = 0                                   # for MIN_LENGTH
     check_fn: Optional[Callable[[str], bool]] = field(default=None, repr=False)  # for CUSTOM
+    judge_fn: Optional["JudgeFunction"] = field(default=None, repr=False)  # for SEMANTIC_JUDGE
 
     def check(self, text: str) -> Optional[ConstraintViolation]:
         """
@@ -140,6 +145,19 @@ class Constraint:
                     message=f"Tone check failed: none of the expected signals found: {self.keywords}",
                     action=self.action,
                 )
+
+        elif self.type == ConstraintType.SEMANTIC_JUDGE:
+            # LLM-as-judge: evaluate the meaning of the response against the
+            # rule in self.description. Fail-open when no judge is configured.
+            if self.judge_fn is not None:
+                verdict = self.judge_fn(text, self.description)
+                if not verdict.passed:
+                    return ConstraintViolation(
+                        constraint_id=self.id,
+                        constraint_type=self.type,
+                        message=f"Semantic judge failed: {verdict.reasoning or self.description}",
+                        action=self.action,
+                    )
 
         elif self.type == ConstraintType.CUSTOM:
             if self.pattern:
@@ -254,8 +272,17 @@ class ConstraintEngine:
         return [c.to_dict() for c in self._constraints]
 
     @classmethod
-    def from_list(cls, items: List[dict]) -> "ConstraintEngine":
+    def from_list(cls, items: List) -> "ConstraintEngine":
+        """Build an engine from a mixed list of constraint dicts or Constraint objects.
+
+        Dicts are deserialized (used when loading from JSON/YAML); live
+        ``Constraint`` objects are used as-is so callables such as
+        ``judge_fn`` and ``check_fn`` survive.
+        """
         engine = cls()
         for item in items:
-            engine.add(Constraint.from_dict(item))
+            if isinstance(item, Constraint):
+                engine.add(item)
+            else:
+                engine.add(Constraint.from_dict(item))
         return engine

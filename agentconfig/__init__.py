@@ -1,15 +1,16 @@
 """
-AgentConfig â€” Business-semantic driven Agent configuration system.
+AgentConfig â€?Business-semantic driven Agent configuration system.
 
 The missing layer between business users and AI agents.
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __author__ = "cdzzy"
 
 from agentconfig.semantic.intent import IntentParser, AgentIntent
 from agentconfig.semantic.constraint import ConstraintEngine, Constraint, ConstraintType
 from agentconfig.semantic.config_gen import ConfigGenerator, AgentConfig
+from agentconfig.semantic.judge import LLMJudge, JudgeVerdict, semantic_judge_constraint
 from agentconfig.runtime.executor import AgentExecutor
 from agentconfig.runtime.monitor import AgentMonitor, RunRecord
 from agentconfig.validation import validate_config, validate_dict, get_schema, ValidationResult, ValidationError
@@ -28,6 +29,9 @@ __all__ = [
     "ConstraintType",
     "ConfigGenerator",
     "AgentConfig",
+    "LLMJudge",
+    "JudgeVerdict",
+    "semantic_judge_constraint",
     "AgentExecutor",
     "AgentMonitor",
     "RunRecord",

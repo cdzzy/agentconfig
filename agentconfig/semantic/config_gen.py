@@ -118,7 +118,10 @@ class AgentConfig:
             "system_prompt": self.system_prompt,
             "intent":       self.intent.to_dict() if self.intent else None,
             "model":        self.model.to_dict(),
-            "constraints":  self.constraints,
+            "constraints":  [
+                c.to_dict() if isinstance(c, Constraint) else c
+                for c in self.constraints
+            ],
             "tools_enabled":  self.tools_enabled,
             "tools_disabled": self.tools_disabled,
             "max_turns":    self.max_turns,

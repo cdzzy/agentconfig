@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentconfig"
-version = "2.0.0"
+version = "2.1.0"
 description = "Business-semantic driven AI agent configuration system. The missing layer between business users and AI agents."
 readme = "README.md"
 license = { text = "MIT" }

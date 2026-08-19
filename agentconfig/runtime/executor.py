@@ -202,10 +202,14 @@ class AgentExecutor:
             fallback = "I'm sorry, I can't provide that information. Please contact our team."
             for v in check_result.violations:
                 if v.action == ConstraintAction.BLOCK:
-                    # Look up fallback from config constraints
+                    # Look up fallback from config constraints (dict or live Constraint)
                     for c in config.constraints:
-                        if c.get("id") == v.constraint_id:
-                            fallback = c.get("fallback_message", fallback)
+                        cid = c.get("id") if isinstance(c, dict) else getattr(c, "id", None)
+                        if cid == v.constraint_id:
+                            if isinstance(c, dict):
+                                fallback = c.get("fallback_message", fallback)
+                            else:
+                                fallback = getattr(c, "fallback_message", fallback)
                             break
                     break
             assistant_turn.content = fallback
