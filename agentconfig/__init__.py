@@ -1,5 +1,5 @@
 """
-AgentConfig â€?Business-semantic driven Agent configuration system.
+AgentConfig â€” Business-semantic driven Agent configuration system.
 
 The missing layer between business users and AI agents.
 """
