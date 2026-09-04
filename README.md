@@ -288,7 +288,7 @@ app.register_blueprint(create_reload_blueprint(store), url_prefix="/api")
 ## Roadmap
 
 - [x] CLI: `agentconfig serve` and `agentconfig watch` (hot-reload)
-- [ ] LangGraph / AutoGen / CrewAI adapter plugins
+- [x] **LangGraph / AutoGen / CrewAI adapter plugins** (constraint-enforcing wrappers for each framework's calling convention) ✅ (v2.2.0)
 - [x] **LLM-as-judge constraint** (semantic violation detection — catches paraphrases & indirect reveals that keywords miss) ✅ (v2.1.0)
 - [x] **Config versioning and diff view** (commit / diff / rollback / history)
 - [x] **YAML/TOML config support** (`from_yaml` / `from_toml` / `to_yaml` / `to_toml`)

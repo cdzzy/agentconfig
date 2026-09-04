@@ -2,6 +2,12 @@
 
 All notable changes to AgentConfig are documented in this file.
 
+## [2.2.0] - 2026-08-27
+
+### Added
+
+- **Framework adapter plugins** (`agentconfig.adapters`): constraint-enforcing wrappers for LangGraph (`wrap_langgraph_node`), AutoGen (`wrap_autogen_reply`), and CrewAI (`wrap_crewai_agent`). Dependency-free — wrappers work with duck-typed callables following each framework's calling convention, so blocked responses are replaced by the configured fallback before reaching the user.
+
 ## [2.1.0] - 2026-08-19
 
 ### Added

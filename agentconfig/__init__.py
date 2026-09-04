@@ -4,7 +4,7 @@ AgentConfig — Business-semantic driven Agent configuration system.
 The missing layer between business users and AI agents.
 """
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 __author__ = "cdzzy"
 
 from agentconfig.semantic.intent import IntentParser, AgentIntent
@@ -20,6 +20,13 @@ from agentconfig.mcp import MCPServerConfig, ToolPolicy, MCPRouter, substitute_e
 from agentconfig.portable import AgentDir, load_agent_dir, save_agent_dir, init_agent_dir
 from agentconfig.versioning import ConfigVersionManager, ConfigVersion, diff_configs, diff_dicts
 from agentconfig.hotreload import ConfigWatcher, watch_config, RuntimeConfigStore, create_reload_blueprint
+from agentconfig.adapters.frameworks import (
+    ConstraintBlocked,
+    enforce_response,
+    wrap_autogen_reply,
+    wrap_crewai_agent,
+    wrap_langgraph_node,
+)
 
 __all__ = [
     "IntentParser",
@@ -62,4 +69,9 @@ __all__ = [
     "watch_config",
     "RuntimeConfigStore",
     "create_reload_blueprint",
+    "ConstraintBlocked",
+    "enforce_response",
+    "wrap_autogen_reply",
+    "wrap_crewai_agent",
+    "wrap_langgraph_node",
 ]
