@@ -1,5 +1,8 @@
 # AgentConfig
 
+> Part of the [Agent OS](https://github.com/cdzzy/agent-kernel/blob/main/docs/agent-os.md) suite — kernel · network · memory · policy · audit · testing
+
+
 **The missing layer between business users and AI agents.**
 
 > Business people know what they want their agent to do. They just shouldn't need to write Python to say it.
