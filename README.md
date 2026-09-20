@@ -2,14 +2,15 @@
 
 > Part of the [Agent OS](https://github.com/cdzzy/agent-kernel/blob/main/docs/agent-os.md) suite — kernel · network · memory · policy · audit · testing
 [![PyPI](https://img.shields.io/pypi/v/cdzzy-agentconfig?color=blue)](https://pypi.org/project/cdzzy-agentconfig/)
+[![CI](https://github.com/cdzzy/agentconfig/actions/workflows/ci.yml/badge.svg)](https://github.com/cdzzy/agentconfig/actions/workflows/ci.yml)
 
 
 **The missing layer between business users and AI agents.**
 
 > Business people know what they want their agent to do. They just shouldn't need to write Python to say it.
 
-[![Tests](https://img.shields.io/badge/tests-179%20passed-brightgreen)](tests/)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
+[![Tests](https://img.shields.io/badge/tests-259%20passed-brightgreen)](tests/)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---

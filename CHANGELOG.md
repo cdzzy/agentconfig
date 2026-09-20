@@ -2,6 +2,18 @@
 
 All notable changes to AgentConfig are documented in this file.
 
+## [2.3.0] - 2026-09-20
+
+### Added
+
+- **Markdown gateway** (`agentconfig.gateway`): treat SKILL.md and AGENTS.md as first-class agent configuration. `parse_skill_md` / `render_skill_md` / `parse_agents_md` / `render_agents_md` round-trip through a shared `ConfigTree` IR with strict YAML-frontmatter validation and actionable errors (`GatewayParseError` / `GatewayValidationError`); tree-level round-trips are lossless.
+- **CLI**: `agentconfig skill import` (SKILL.md → config JSON) and `agentconfig skill export` (config JSON → SKILL.md or AGENTS.md).
+- **Release automation** (`.github/workflows/release.yml`): PyPI publish on `v*` tags, refused when the tag doesn't match `__version__`.
+
+### Changed
+
+- `requires-python` aligned to >=3.9 to match the CI test matrix (3.9–3.13, fail-fast off) and the new ruff lint job.
+
 ## [2.2.0] - 2026-08-27
 
 ### Added

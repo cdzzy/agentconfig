@@ -9,6 +9,8 @@ Usage:
     agentconfig export-a2a [--config FILE] [--output FILE]
     agentconfig init [--path DIR] [--name NAME]
     agentconfig watch [--config FILE] [--interval SECONDS]
+    agentconfig skill import --source FILE [--format skill|agents|auto] [--output FILE]
+    agentconfig skill export --config FILE --target skill|agents [--output FILE]
 """
 
 import argparse
@@ -544,6 +546,108 @@ def cmd_import_skill(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_skill_import(args: argparse.Namespace) -> int:
+    """Import SKILL.md / AGENTS.md into a gateway config tree (JSON)."""
+    from ..gateway import AGENTS, SKILL, GatewayError, parse_agents_md, parse_skill_md
+
+    source = Path(args.source)
+    if not source.exists():
+        print(f"Error: file not found: {args.source}", file=sys.stderr)
+        return 1
+
+    fmt = args.format
+    if fmt == "auto":
+        stem = source.stem.strip().upper()
+        if stem == "AGENTS":
+            fmt = AGENTS
+        else:
+            # Default to skill; AGENTS.md is detected by filename only.
+            fmt = SKILL
+        if stem not in ("SKILL", "AGENTS"):
+            print("Note: could not detect format from filename; defaulting to 'skill'. "
+                  "Use --format skill|agents to override.", file=sys.stderr)
+
+    try:
+        text = source.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as e:
+        print(f"Error: cannot read {args.source}: {e}", file=sys.stderr)
+        return 1
+
+    try:
+        if fmt == AGENTS:
+            tree = parse_agents_md(text, source=source.name)
+        else:
+            tree = parse_skill_md(text, source=source.name)
+    except GatewayError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    payload = json.dumps(tree.to_dict(), indent=2, ensure_ascii=False)
+
+    if args.output:
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(payload + "\n", encoding="utf-8")
+        print(f"✅ Parsed {fmt} file: {source.name}")
+        print(f"   name: {tree.name}")
+        print(f"   allowed tools: {len(tree.allowed_tools)}")
+        print(f"   config tree saved to: {output_path.absolute()}")
+    else:
+        print(payload)
+
+    return 0
+
+
+def cmd_skill_export(args: argparse.Namespace) -> int:
+    """Render a gateway config tree (JSON) as SKILL.md or AGENTS.md."""
+    from ..gateway import AGENTS, SKILL, ConfigTree, GatewayError, render_agents_md, render_skill_md
+
+    config_path = Path(args.config)
+    if not config_path.exists():
+        print(f"Error: config tree file not found: {args.config}", file=sys.stderr)
+        return 1
+
+    try:
+        data = json.loads(config_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        print(f"Error: invalid JSON in config tree file: {e}", file=sys.stderr)
+        return 1
+
+    try:
+        tree = ConfigTree.from_dict(data)
+    except GatewayError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    try:
+        if args.target == AGENTS:
+            content = render_agents_md(tree)
+        else:
+            content = render_skill_md(tree)
+    except GatewayError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    if args.output:
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(content, encoding="utf-8")
+        print(f"✅ {config_path.name} rendered as {args.target} -> {output_path.absolute()}")
+    else:
+        print(content, end="")
+
+    return 0
+
+
+def cmd_skill(args: argparse.Namespace) -> int:
+    """Dispatch the 'skill' command group (import / export)."""
+    if args.skill_command == "import":
+        return cmd_skill_import(args)
+    if args.skill_command == "export":
+        return cmd_skill_export(args)
+    return 2
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     """Initialize a .agent/ portable directory with the standard layout."""
     from ..portable import init_agent_dir, AgentDir
@@ -670,6 +774,56 @@ def create_parser() -> argparse.ArgumentParser:
         help="Output file path (default: print to stdout)",
     )
 
+    # skill command group (SKILL.md / AGENTS.md gateway)
+    skill_group = subparsers.add_parser(
+        "skill",
+        help="Import/export SKILL.md and AGENTS.md (markdown gateway)",
+    )
+    skill_sub = skill_group.add_subparsers(
+        dest="skill_command",
+        help="Gateway operations",
+    )
+
+    skill_import_parser = skill_sub.add_parser(
+        "import",
+        help="Parse SKILL.md / AGENTS.md into a gateway config tree (JSON)",
+    )
+    skill_import_parser.add_argument(
+        "--source", "-s",
+        required=True,
+        help="Path to a SKILL.md or AGENTS.md file",
+    )
+    skill_import_parser.add_argument(
+        "--format", "-f",
+        choices=["skill", "agents", "auto"],
+        default="auto",
+        help="Input format (default: auto-detect from the file name)",
+    )
+    skill_import_parser.add_argument(
+        "--output", "-o",
+        help="Output JSON file path (default: print to stdout)",
+    )
+
+    skill_export_parser = skill_sub.add_parser(
+        "export",
+        help="Render a gateway config tree (JSON) as SKILL.md or AGENTS.md",
+    )
+    skill_export_parser.add_argument(
+        "--config", "-c",
+        required=True,
+        help="Path to a config tree JSON file (from 'skill import')",
+    )
+    skill_export_parser.add_argument(
+        "--target", "-t",
+        choices=["skill", "agents"],
+        required=True,
+        help="Render target: 'skill' produces SKILL.md, 'agents' produces AGENTS.md",
+    )
+    skill_export_parser.add_argument(
+        "--output", "-o",
+        help="Output markdown file path (default: print to stdout)",
+    )
+
     # init command
     init_parser = subparsers.add_parser(
         "init",
@@ -758,6 +912,7 @@ def cli(args: Optional[list] = None) -> int:
         "export": cmd_export,
         "export-a2a": cmd_export_a2a,
         "import-skill": cmd_import_skill,
+        "skill": cmd_skill,
         "init": cmd_init,
         "watch": cmd_watch,
     }
