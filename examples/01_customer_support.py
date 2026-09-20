@@ -6,11 +6,11 @@ Shows how to configure and run a customer service agent
 without writing any complex code.
 """
 
-from agentconfig.semantic.intent import IntentParser
-from agentconfig.semantic.constraint import Constraint, ConstraintType, ConstraintAction
-from agentconfig.semantic.config_gen import ConfigGenerator, ModelConfig
 from agentconfig.runtime.executor import AgentExecutor
 from agentconfig.runtime.monitor import AgentMonitor
+from agentconfig.semantic.config_gen import ConfigGenerator, ModelConfig
+from agentconfig.semantic.constraint import Constraint, ConstraintAction, ConstraintType
+from agentconfig.semantic.intent import IntentParser
 
 # ── 1. Describe your agent in plain language ──────────────────────────────
 parser = IntentParser()
@@ -97,8 +97,10 @@ print("\nConfig saved to: support_bot_config.json")
 
 # ── 6. Load config back ───────────────────────────────────────────────────
 from agentconfig.semantic.config_gen import AgentConfig
+
 loaded = AgentConfig.load("support_bot_config.json")
 print(f"Loaded config: {loaded.name} (ID: {loaded.config_id})")
 
 import os
+
 os.remove("support_bot_config.json")

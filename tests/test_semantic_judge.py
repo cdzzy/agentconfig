@@ -2,22 +2,20 @@
 Tests for LLM-as-judge semantic constraints (v2.1.0).
 """
 
-import pytest
 
+from agentconfig.runtime.executor import AgentExecutor
+from agentconfig.semantic.config_gen import AgentConfig
 from agentconfig.semantic.constraint import (
-    ConstraintEngine,
     Constraint,
-    ConstraintType,
     ConstraintAction,
+    ConstraintEngine,
+    ConstraintType,
 )
 from agentconfig.semantic.judge import (
-    LLMJudge,
     JudgeVerdict,
+    LLMJudge,
     semantic_judge_constraint,
 )
-from agentconfig.semantic.config_gen import AgentConfig
-from agentconfig.runtime.executor import AgentExecutor
-
 
 # ── JudgeVerdict ────────────────────────────────────────────────────────
 
@@ -79,7 +77,8 @@ class TestLLMJudgeParsing:
 class TestSemanticJudgeConstraint:
     def _engine(self, reply=None, verdict=None):
         if verdict is not None:
-            judge_fn = lambda response, rule: verdict
+            def judge_fn(response, rule):
+                return verdict
         else:
             judge_fn = LLMJudge(llm_fn=lambda p: reply).judge
         constraint = semantic_judge_constraint(

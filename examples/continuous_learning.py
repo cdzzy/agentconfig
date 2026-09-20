@@ -39,7 +39,6 @@ class ContinuousLearner:
         low_quality = [h for h in self.interaction_history if h["quality"] < 0.6]
         if low_quality:
             # 分析低质量交互的共同特征
-            inputs = [h["input"] for h in low_quality]
             return (
                 f"检测到 {len(low_quality)} 次低质量交互。"
                 "建议增强 temperature 控制或添加领域特定约束。"

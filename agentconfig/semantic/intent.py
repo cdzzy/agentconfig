@@ -21,8 +21,8 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import List, Optional
 from enum import Enum
+from typing import List
 
 
 class AgentTone(str, Enum):

@@ -2,19 +2,23 @@
 Tests for AgentConfig framework.
 """
 
-import pytest
-import sys
 import os
+import sys
+
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from agentconfig.semantic.intent import IntentParser, AgentDomain, AgentTone
-from agentconfig.semantic.constraint import (
-    Constraint, ConstraintType, ConstraintAction, ConstraintEngine,
-)
-from agentconfig.semantic.config_gen import ConfigGenerator, AgentConfig, ModelConfig
 from agentconfig.runtime.executor import AgentExecutor, RunStatus
 from agentconfig.runtime.monitor import AgentMonitor
+from agentconfig.semantic.config_gen import AgentConfig, ConfigGenerator, ModelConfig
+from agentconfig.semantic.constraint import (
+    Constraint,
+    ConstraintAction,
+    ConstraintEngine,
+    ConstraintType,
+)
+from agentconfig.semantic.intent import AgentDomain, AgentTone, IntentParser
 
 
 # ── Intent Parser ────────────────────────────────────────────────────────
@@ -249,7 +253,6 @@ class TestAgentExecutor:
         assert record.turn_count == 3
 
     def test_constraint_blocks_response(self):
-        from agentconfig.semantic.constraint import Constraint, ConstraintType, ConstraintAction
         from agentconfig.semantic.config_gen import AgentConfig
 
         # Build a config with a constraint that blocks "BLOCK_THIS"

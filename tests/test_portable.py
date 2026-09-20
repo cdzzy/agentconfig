@@ -2,28 +2,23 @@
 Tests for agentconfig.portable — .agent/ portable directory support.
 """
 
-import json
-import os
-import tempfile
-from pathlib import Path
 
 import pytest
 
 from agentconfig.portable import (
     AgentDir,
+    _append_jsonl,
+    _parse_permissions_md,
+    _parse_preferences_md,
+    _read_jsonl,
+    _render_permissions_md,
+    _render_preferences_md,
+    _write_jsonl,
+    init_agent_dir,
     load_agent_dir,
     save_agent_dir,
-    init_agent_dir,
-    _parse_preferences_md,
-    _render_preferences_md,
-    _parse_permissions_md,
-    _render_permissions_md,
-    _read_jsonl,
-    _write_jsonl,
-    _append_jsonl,
 )
 from agentconfig.semantic.config_gen import AgentConfig, ModelConfig
-
 
 # ── Fixtures ────────────────────────────────────────────────────────────
 

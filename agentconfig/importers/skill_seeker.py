@@ -15,9 +15,9 @@ from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -130,7 +130,6 @@ class SkillImporter:
                     setattr(metadata, section, [item.strip() for item in items])
         
         # Extract guidelines (everything after guidelines section)
-        guidelines_pattern = r'(?:##?\s*)?[Gg]uidelines?[:]?\s*\n((?:.+(?:\n|$))+'
         guidelines_match = re.search(
             r'(?:##?\s*)?[Gg]uidelines?[:]?\s*\n((?:.+\n)*)',
             content,

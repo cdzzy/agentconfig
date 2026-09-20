@@ -12,7 +12,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import List, Optional, Callable, Dict, Any
+from typing import Any, Callable, Dict, List, Optional
 
 from agentconfig.semantic.config_gen import AgentConfig
 from agentconfig.semantic.constraint import ConstraintAction

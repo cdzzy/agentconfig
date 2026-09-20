@@ -12,10 +12,19 @@ import json
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import List, Optional, Dict, Any
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from agentconfig.semantic.constraint import (
+    Constraint,
+    ConstraintAction,
+    ConstraintEngine,
+    ConstraintType,
+)
 from agentconfig.semantic.intent import AgentIntent
-from agentconfig.semantic.constraint import ConstraintEngine, Constraint, ConstraintType, ConstraintAction
+
+if TYPE_CHECKING:
+    from agentconfig.a2a import A2ACard
+    from agentconfig.mcp import MCPRouter
 
 
 def _strip_none(obj: Any) -> Any:
@@ -309,7 +318,7 @@ class AgentConfig:
             router = config.get_mcp_router()
             print(router.get_allowed_tools())
         """
-        from agentconfig.mcp import MCPServerConfig, ToolPolicy, MCPRouter
+        from agentconfig.mcp import MCPRouter, MCPServerConfig, ToolPolicy
         servers = [MCPServerConfig.from_dict(s) for s in self.mcp_servers]
         policy = ToolPolicy.from_dict(self.tool_policy) if self.tool_policy else ToolPolicy()
         return MCPRouter(mcp_servers=servers, tool_policy=policy)

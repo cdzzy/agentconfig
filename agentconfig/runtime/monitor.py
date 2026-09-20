@@ -10,10 +10,9 @@ Provides aggregated stats for the dashboard:
 
 from __future__ import annotations
 
-from collections import defaultdict
-from datetime import datetime
-from typing import List, Optional, Dict, Any
 import threading
+from collections import defaultdict
+from typing import Dict, List, Optional
 
 from agentconfig.runtime.executor import RunRecord, RunStatus
 

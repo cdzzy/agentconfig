@@ -7,7 +7,6 @@ no framework packages required.
 
 import pytest
 
-from agentconfig.semantic.config_gen import AgentConfig
 from agentconfig.adapters.frameworks import (
     ConstraintBlocked,
     enforce_response,
@@ -15,6 +14,7 @@ from agentconfig.adapters.frameworks import (
     wrap_crewai_agent,
     wrap_langgraph_node,
 )
+from agentconfig.semantic.config_gen import AgentConfig
 
 
 def make_config():

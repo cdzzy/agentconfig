@@ -8,11 +8,9 @@ providing clear error messages for invalid configs.
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Dict, Any
-
+from typing import Any, List, Optional
 
 # ── Schema path ──────────────────────────────────────────────────────────
 
@@ -209,7 +207,7 @@ def _validate_dict_builtin(data: dict, schema: dict, path: str = "", root_schema
                 if req not in data:
                     errors.append(ValidationError(
                         path=f"{path}.{req}" if path else req,
-                        message=f"Required field missing",
+                        message="Required field missing",
                     ))
 
         # Properties
@@ -235,7 +233,7 @@ def _validate_dict_builtin(data: dict, schema: dict, path: str = "", root_schema
                 if key not in allowed:
                     errors.append(ValidationError(
                         path=f"{path}.{key}" if path else key,
-                        message=f"Unknown field (not in schema)",
+                        message="Unknown field (not in schema)",
                         value=key,
                     ))
 
@@ -386,7 +384,6 @@ def validate_config(path: str) -> ValidationResult:
                             message="TOML support requires Python 3.11+ or 'tomli' package. Install with: pip install tomli",
                         )],
                     )
-            import io
             data = tomllib.loads(raw)
         else:
             return ValidationResult(

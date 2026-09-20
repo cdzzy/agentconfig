@@ -23,11 +23,11 @@ Usage::
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import yaml
 
-from .tree import AGENTS, ConfigTree, GatewayParseError, FRONTMATTER_RE
+from .tree import AGENTS, FRONTMATTER_RE, ConfigTree, GatewayParseError
 
 _H1_RE = re.compile(r"^#\s+(.+?)\s*#*\s*$", re.MULTILINE)
 _H2_RE = re.compile(r"^##\s+(.+?)\s*#*\s*$", re.MULTILINE)

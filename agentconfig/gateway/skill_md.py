@@ -24,7 +24,7 @@ from typing import Any, Dict, List
 
 import yaml
 
-from .tree import SKILL, ConfigTree, GatewayParseError, GatewayValidationError, FRONTMATTER_RE
+from .tree import FRONTMATTER_RE, SKILL, ConfigTree, GatewayParseError, GatewayValidationError
 
 # Skill name per the Agent Skills spec: lowercase letters, digits and
 # hyphens, 1-64 characters, must start and end with an alphanumeric char.

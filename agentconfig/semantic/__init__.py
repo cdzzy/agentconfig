@@ -1,6 +1,6 @@
-from agentconfig.semantic.intent import IntentParser, AgentIntent
-from agentconfig.semantic.constraint import ConstraintEngine, Constraint, ConstraintType
-from agentconfig.semantic.config_gen import ConfigGenerator, AgentConfig
+from agentconfig.semantic.config_gen import AgentConfig, ConfigGenerator
+from agentconfig.semantic.constraint import Constraint, ConstraintEngine, ConstraintType
+from agentconfig.semantic.intent import AgentIntent, IntentParser
 
 __all__ = [
     "IntentParser", "AgentIntent",

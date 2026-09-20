@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from agentconfig.cli.main import cli
 from agentconfig.gateway import (
     AGENTS,
     SKILL,
@@ -20,8 +21,6 @@ from agentconfig.gateway import (
     render_skill_md,
     validate_skill_tree,
 )
-from agentconfig.cli.main import cli
-
 
 # ── Fixtures ────────────────────────────────────────────────────────────
 

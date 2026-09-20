@@ -20,9 +20,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from ..semantic.intent import IntentParser
 from ..semantic.config_gen import ConfigGenerator
-from ..semantic.constraint import ConstraintEngine
+from ..semantic.intent import IntentParser
 
 
 def get_templates() -> dict:
@@ -189,8 +188,8 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
 def cmd_export_a2a(args: argparse.Namespace) -> int:
     """Export a configuration as a Google A2A Agent Card."""
-    from ..loader import load_config
     from ..a2a import generate_a2a_card
+    from ..loader import load_config
 
     config_file = args.config
     config_path = Path(config_file)
@@ -257,7 +256,7 @@ def cmd_list_templates(args: argparse.Namespace) -> int:
         print(f"\n{name}")
         print(f"  {info['description']}")
     
-    print(f"\n\nUse 'agentconfig create --template <name>' to create from a template")
+    print("\n\nUse 'agentconfig create --template <name>' to create from a template")
     return 0
 
 
@@ -290,7 +289,7 @@ def cmd_export(args: argparse.Namespace) -> int:
         output = _export_a2a(data)
     else:
         print(f"Error: Unknown format '{args.format}'", file=sys.stderr)
-        print(f"Supported formats: langchain, langgraph, openai, a2a", file=sys.stderr)
+        print("Supported formats: langchain, langgraph, openai, a2a", file=sys.stderr)
         return 1
     
     if args.output:
@@ -312,7 +311,6 @@ def _export_langchain(config: dict) -> str:
     constraint_texts = []
     for c in constraints:
         ctype = c.get("type", "")
-        action = c.get("action", "")
         params = c.get("params", {})
         
         if ctype == "forbidden_keyword":
@@ -600,7 +598,7 @@ def cmd_skill_import(args: argparse.Namespace) -> int:
 
 def cmd_skill_export(args: argparse.Namespace) -> int:
     """Render a gateway config tree (JSON) as SKILL.md or AGENTS.md."""
-    from ..gateway import AGENTS, SKILL, ConfigTree, GatewayError, render_agents_md, render_skill_md
+    from ..gateway import AGENTS, ConfigTree, GatewayError, render_agents_md, render_skill_md
 
     config_path = Path(args.config)
     if not config_path.exists():
@@ -650,7 +648,7 @@ def cmd_skill(args: argparse.Namespace) -> int:
 
 def cmd_init(args: argparse.Namespace) -> int:
     """Initialize a .agent/ portable directory with the standard layout."""
-    from ..portable import init_agent_dir, AgentDir
+    from ..portable import init_agent_dir
     from ..semantic.config_gen import AgentConfig
 
     target = args.path or "."

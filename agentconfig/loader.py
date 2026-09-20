@@ -27,7 +27,6 @@ from typing import Optional
 
 from agentconfig.semantic.config_gen import AgentConfig
 
-
 # ── Format detection ─────────────────────────────────────────────────────
 
 SUPPORTED_FORMATS = {"json", "yaml", "yml", "toml"}

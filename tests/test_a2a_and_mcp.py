@@ -2,19 +2,18 @@
 Tests for A2A Agent Card generation (Issue #3) and MCP tool declarations (Issue #4).
 """
 
-import pytest
 import json
 import os
 import sys
-import tempfile
+
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from agentconfig.a2a import A2ACard, A2ASkill, generate_a2a_card
-from agentconfig.mcp import MCPServerConfig, ToolPolicy, MCPRouter
-from agentconfig.semantic.config_gen import AgentConfig, ModelConfig, ConfigGenerator
+from agentconfig.mcp import MCPRouter, MCPServerConfig, ToolPolicy
+from agentconfig.semantic.config_gen import AgentConfig, ConfigGenerator
 from agentconfig.semantic.intent import IntentParser
-
 
 # ── A2A Card Tests (Issue #3) ─────────────────────────────────────────────
 

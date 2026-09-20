@@ -13,7 +13,7 @@ Usage:
     python examples/03_import_skill.py
 """
 
-from agentconfig.importers.skill_seeker import SkillImporter, import_skill
+from agentconfig.importers.skill_seeker import SkillImporter
 
 
 def example_basic_import():
@@ -63,7 +63,7 @@ You are a helpful coding assistant. Follow these principles:
     importer = SkillImporter()
     metadata = importer.import_from_string(skill_content, "Coding Assistant")
     
-    print(f"\n📋 Imported Skill Metadata:")
+    print("\n📋 Imported Skill Metadata:")
     print(f"   Name: {metadata.name}")
     print(f"   Description: {metadata.description}")
     print(f"   Author: {metadata.author}")
@@ -76,7 +76,7 @@ You are a helpful coding assistant. Follow these principles:
     # Convert to AgentConfig
     config = importer.to_agent_config_dict(metadata)
     
-    print(f"\n✅ Generated AgentConfig:")
+    print("\n✅ Generated AgentConfig:")
     print(f"   System prompt length: {len(config['system_prompt'])} chars")
     print(f"   Tools enabled: {len(config['tools_enabled'])}")
     print(f"   Constraints: {len(config['constraints'])}")

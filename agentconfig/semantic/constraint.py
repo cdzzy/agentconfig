@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional, Callable
+from typing import TYPE_CHECKING, Callable, List, Optional
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle guard
     from agentconfig.semantic.judge import JudgeFunction

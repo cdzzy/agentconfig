@@ -12,10 +12,10 @@ Healthcare agents require extra care around:
 - Drug interaction warnings
 """
 
-from agentconfig.semantic.intent import IntentParser
-from agentconfig.semantic.constraint import Constraint, ConstraintType, ConstraintAction
-from agentconfig.semantic.config_gen import ConfigGenerator, ModelConfig
 from agentconfig.runtime.executor import AgentExecutor
+from agentconfig.semantic.config_gen import ConfigGenerator, ModelConfig
+from agentconfig.semantic.constraint import Constraint, ConstraintAction, ConstraintType
+from agentconfig.semantic.intent import IntentParser
 
 # ── 1. Define the agent's role and boundaries ─────────────────────────────────
 parser = IntentParser()

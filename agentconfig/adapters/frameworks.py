@@ -32,10 +32,10 @@ Usage::
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Tuple
 
 from agentconfig.semantic.config_gen import AgentConfig
-from agentconfig.semantic.constraint import CheckResult, ConstraintEngine, ConstraintAction
+from agentconfig.semantic.constraint import CheckResult, ConstraintAction, ConstraintEngine
 
 
 class ConstraintBlocked(Exception):

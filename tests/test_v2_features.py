@@ -6,29 +6,25 @@ Tests for new v2.0.0 features:
 - Hot-reload watcher and runtime store (Issue #6)
 """
 
-import json
 import os
-import threading
 import time
 
 import pytest
 
+from agentconfig.hotreload import (
+    ConfigWatcher,
+    RuntimeConfigStore,
+    create_reload_blueprint,
+    watch_config,
+)
+from agentconfig.mcp import MCPRouter, MCPServerConfig, ToolPolicy, substitute_env
 from agentconfig.semantic.config_gen import AgentConfig
-from agentconfig.mcp import MCPServerConfig, ToolPolicy, MCPRouter, substitute_env
+from agentconfig.validation import get_schema, schema_file
 from agentconfig.versioning import (
     ConfigVersionManager,
-    ConfigVersion,
     diff_configs,
     diff_dicts,
 )
-from agentconfig.hotreload import (
-    ConfigWatcher,
-    watch_config,
-    RuntimeConfigStore,
-    create_reload_blueprint,
-)
-from agentconfig.validation import get_schema, schema_file
-
 
 # ── YAML/TOML serialization (Issue #2) ────────────────────────────────────
 
@@ -115,7 +111,7 @@ class TestVersioning:
         c1 = AgentConfig(name="Agent", max_turns=20)
         c2 = AgentConfig(name="Agent", max_turns=30)
         v1 = manager.commit(c1, "Initial")
-        v2 = manager.commit(c2, "Bumped turns")
+        manager.commit(c2, "Bumped turns")
         assert [v.id for v in manager.history()] == ["v1", "v2"]
         assert v1.message == "Initial"
         assert manager.current.id == "v2"

@@ -2,19 +2,19 @@
 Tests for config validation (Issue #1) and multi-format loader (Issue #2).
 """
 
-import pytest
+import importlib.util
 import json
 import os
 import sys
-import tempfile
+
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from agentconfig.validation import validate_config, validate_dict, ValidationResult, ValidationError
-from agentconfig.loader import load_config, save_config, list_formats
-from agentconfig.semantic.config_gen import AgentConfig, ModelConfig, ConfigGenerator
+from agentconfig.loader import list_formats, load_config, save_config
+from agentconfig.semantic.config_gen import AgentConfig, ConfigGenerator
 from agentconfig.semantic.intent import IntentParser
-
+from agentconfig.validation import ValidationError, ValidationResult, validate_config, validate_dict
 
 # ── Validation Tests (Issue #1) ──────────────────────────────────────────
 
@@ -197,9 +197,7 @@ class TestLoadConfig:
         assert loaded.version == "1.0.0"
 
     def test_load_yaml(self, tmp_path):
-        try:
-            import yaml
-        except ImportError:
+        if importlib.util.find_spec("yaml") is None:
             pytest.skip("pyyaml not installed")
 
         yaml_content = """
@@ -221,13 +219,8 @@ model:
         assert loaded.max_turns == 30
 
     def test_load_toml(self, tmp_path):
-        try:
-            import tomllib
-        except ImportError:
-            try:
-                import tomli
-            except ImportError:
-                pytest.skip("TOML support not available")
+        if importlib.util.find_spec("tomllib") is None and importlib.util.find_spec("tomli") is None:
+            pytest.skip("TOML support not available")
 
         toml_content = '''
 name = "TOML Agent"
@@ -271,9 +264,7 @@ class TestSaveConfig:
         assert loaded.name == "Save Test"
 
     def test_save_yaml(self, tmp_path):
-        try:
-            import yaml
-        except ImportError:
+        if importlib.util.find_spec("yaml") is None:
             pytest.skip("pyyaml not installed")
 
         config = AgentConfig(name="YAML Save Test", version="1.0.0")
@@ -294,9 +285,7 @@ class TestSaveConfig:
         assert loaded.config_id == original.config_id
 
     def test_save_and_load_roundtrip_yaml(self, tmp_path):
-        try:
-            import yaml
-        except ImportError:
+        if importlib.util.find_spec("yaml") is None:
             pytest.skip("pyyaml not installed")
 
         parser = IntentParser()

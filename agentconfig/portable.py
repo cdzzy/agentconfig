@@ -60,10 +60,9 @@ import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from agentconfig.semantic.config_gen import AgentConfig
-
 
 # ── Constants ───────────────────────────────────────────────────────────
 
@@ -446,12 +445,12 @@ class AgentDir:
         """Re-render LESSONS.md from lessons.jsonl."""
         lessons = self.list_lessons()
         lines = ["# Lessons", ""]
-        for i, l in enumerate(lessons, 1):
-            lines.append(f"## {i}. {l.get('category', 'general').title()}")
+        for i, lesson in enumerate(lessons, 1):
+            lines.append(f"## {i}. {lesson.get('category', 'general').title()}")
             lines.append("")
-            lines.append(l.get("lesson", ""))
-            if l.get("rationale"):
-                lines.append(f"\n*Rationale: {l['rationale']}*")
+            lines.append(lesson.get("lesson", ""))
+            if lesson.get("rationale"):
+                lines.append(f"\n*Rationale: {lesson['rationale']}*")
             lines.append("")
         (self.path / FILE_LESSONS_MD).write_text(
             "\n".join(lines), encoding="utf-8"
