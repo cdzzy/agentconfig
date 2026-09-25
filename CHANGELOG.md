@@ -2,6 +2,12 @@
 
 All notable changes to AgentConfig are documented in this file.
 
+## [2.3.1] - 2026-09-25
+
+### Changed
+
+- CI: pip dependency cache added to the lint and test jobs for faster, more reliable installs.
+
 ## [2.3.0] - 2026-09-20
 
 ### Added

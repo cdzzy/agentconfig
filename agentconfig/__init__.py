@@ -4,7 +4,7 @@ AgentConfig — Business-semantic driven Agent configuration system.
 The missing layer between business users and AI agents.
 """
 
-__version__ = "2.3.0"
+__version__ = "2.3.1"
 __author__ = "cdzzy"
 
 from agentconfig.a2a import A2ACard, A2ASkill, generate_a2a_card
