@@ -205,7 +205,7 @@ Works with OpenAI, Anthropic, Ollama, or any LLM with a compatible interface.
 ```bash
 pip install pytest
 pytest tests/ -v
-# 179 passed
+# 308 passed
 ```
 
 ---
@@ -290,6 +290,51 @@ app.register_blueprint(create_reload_blueprint(store), url_prefix="/api")
 
 ---
 
+## Strict Validation (Optional)
+
+Config validation ships in two modes. **Lenient** (default) is the built-in,
+zero-dependency JSON Schema walker. **Strict** adds optional
+[Pydantic](https://docs.pydantic.dev/) v2 models via one extra:
+
+```bash
+pip install "cdzzy-agentconfig[strict]"
+```
+
+```python
+from agentconfig.validation import Strictness, validate_config
+
+result = validate_config("agent.yaml", mode=Strictness.STRICT)
+if result.valid:
+    print(result.model.name)          # typed attribute access, not dict spelunking
+    print(result.model.intent.domain)  # "customer_service"
+```
+
+On top of everything lenient mode enforces, strict mode:
+
+* **rejects silent type coercion** — `"20"` never becomes `20`, `"yes"`
+  never becomes `True`. What was in your file is what gets validated,
+  which matters because YAML/TOML parsers happily coerce values before
+  validation ever runs;
+* **reports every violation at once** — the built-in walker stops at
+  the first type mismatch in a subtree, pydantic lists all of them with
+  precise locations (`model.temperature`, `max_turns`, ...);
+* **returns a typed model** — `result.model` is a validated
+  `AgentConfigModel` instance you can reuse at runtime, or `model_dump()`
+  back to a plain dict;
+* **fails loud on schema drift** — unknown fields are rejected
+  (`extra="forbid"`), so a typo like `intent.tone: ["sacastic"]` or a
+  renamed field can never slip through silently.
+
+Pydantic stays optional: without the extra, strict-mode requests fall
+back to the built-in validator and the result carries an explanatory
+note in `result.notes` — existing pipelines never hard-fail.
+
+`validate_dict(data, mode="strict")` accepts the same selector, and
+`"lenient"` / `"strict"` strings work anywhere a `Strictness` member
+does.
+
+---
+
 ## Roadmap
 
 - [x] CLI: `agentconfig serve` and `agentconfig watch` (hot-reload)
@@ -298,6 +343,7 @@ app.register_blueprint(create_reload_blueprint(store), url_prefix="/api")
 - [x] **Config versioning and diff view** (commit / diff / rollback / history)
 - [x] **YAML/TOML config support** (`from_yaml` / `from_toml` / `to_yaml` / `to_toml`)
 - [x] **JSON Schema validation** (`agentconfig validate` for JSON/YAML/TOML)
+- [x] **Strict validation mode** (optional pydantic v2 — no silent coercion, all violations at once, typed model access) ✅ (v2.4.0)
 - [x] **MCP tool declarations** with env-var substitution (`${VAR}`)
 - [x] ~~Export to LangChain prompt template format~~ ✅
 - [x] **A2A Protocol export** (`agentconfig export-a2a`)

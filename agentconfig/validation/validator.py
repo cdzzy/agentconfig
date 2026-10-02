@@ -61,20 +61,41 @@ class ValidationError:
 
 @dataclass
 class ValidationResult:
-    """Result of validating an AgentConfig."""
+    """Result of validating an AgentConfig.
+
+    Attributes:
+        valid: True when the config passed validation.
+        errors: List of ValidationError items (empty when valid).
+        mode: Validation mode used — "lenient" (built-in walker) or
+              "strict" (pydantic v2 models, see ``strict.py``).
+        notes: Human-readable caveats, e.g. the strict-mode fallback
+              notice when pydantic is not installed.
+        model: Typed ``AgentConfigModel`` instance on strict-mode success,
+              ``None`` in lenient mode. Keeps ValidationResult picklable-
+              friendly: it is a plain attribute, not a dataclass field
+              with special behaviour.
+    """
     valid: bool = True
     errors: List[ValidationError] = field(default_factory=list)
+    mode: str = "lenient"
+    notes: List[str] = field(default_factory=list)
+    model: Optional[Any] = None
 
     def __bool__(self) -> bool:
         return self.valid
 
     def __str__(self) -> str:
         if self.valid:
-            return "Validation passed ✓"
-        lines = [f"Validation failed ({len(self.errors)} error(s)):"]
-        for err in self.errors:
-            lines.append(f"  • {err}")
-        return "\n".join(lines)
+            base = "Validation passed ✓"
+        else:
+            lines = [f"Validation failed ({len(self.errors)} error(s)):"]
+            for err in self.errors:
+                lines.append(f"  • {err}")
+            base = "\n".join(lines)
+        if self.notes:
+            note_block = "\n".join(f"  ℹ {note}" for note in self.notes)
+            return f"{base}\nNotes:\n{note_block}"
+        return base
 
 
 # ── Built-in validation (no external dependency) ────────────────────────
@@ -279,15 +300,21 @@ def _validate_with_refs(data: Any, schema: dict, root_schema: dict, path: str = 
 
 # ── Public API ───────────────────────────────────────────────────────────
 
-def validate_dict(data: dict) -> ValidationResult:
+def validate_dict(data: dict, mode: Optional[Any] = None) -> ValidationResult:
     """
     Validate a dict representing an AgentConfig against the JSON Schema.
 
     Args:
         data: Dict to validate (as from json.load / yaml.safe_load).
+        mode: Optional validation mode — ``None`` / ``"lenient"`` use the
+              built-in zero-dependency JSON Schema walker (default);
+              ``"strict"`` (or ``Strictness.STRICT``) uses the optional
+              pydantic v2 strict models. See ``agentconfig.validation.strict``.
 
     Returns:
-        ValidationResult with valid=True/False and list of errors.
+        ValidationResult with valid=True/False and list of errors. In
+        strict mode the result also carries ``mode="strict"`` and, on
+        success, a typed ``model`` attribute.
 
     Example::
 
@@ -297,6 +324,13 @@ def validate_dict(data: dict) -> ValidationResult:
         if not result.valid:
             print(result)
     """
+    # Deferred import: strict.py imports this module, so a top-level
+    # import here would create a circular dependency at load time.
+    from agentconfig.validation.strict import Strictness, normalize_mode, validate_dict_strict
+
+    if normalize_mode(mode) is Strictness.STRICT:
+        return validate_dict_strict(data)
+
     try:
         schema = _load_schema()
     except FileNotFoundError:
@@ -316,7 +350,7 @@ def validate_dict(data: dict) -> ValidationResult:
     )
 
 
-def validate_config(path: str) -> ValidationResult:
+def validate_config(path: str, mode: Optional[Any] = None) -> ValidationResult:
     """
     Validate an agent config file (JSON, YAML, or TOML) against the schema.
 
@@ -325,15 +359,19 @@ def validate_config(path: str) -> ValidationResult:
               - .json → JSON
               - .yaml / .yml → YAML (requires pyyaml)
               - .toml → TOML (requires tomli for Python < 3.11)
+        mode: Optional validation mode — ``None`` / ``"lenient"`` (default)
+              or ``"strict"`` / ``Strictness.STRICT``. Passed through to
+              :func:`validate_dict`; pre-parse failures (missing file,
+              parse errors) always report the default mode.
 
     Returns:
         ValidationResult with valid=True/False and list of errors.
 
     Example::
 
-        from agentconfig.validation import validate_config
+        from agentconfig.validation import validate_config, Strictness
 
-        result = validate_config("my_agent.yaml")
+        result = validate_config("my_agent.yaml", mode=Strictness.STRICT)
         print(result)
     """
     filepath = Path(path)
@@ -405,4 +443,4 @@ def validate_config(path: str) -> ValidationResult:
             errors=[ValidationError(path="", message=f"Config must be a mapping, got {type(data).__name__}")],
         )
 
-    return validate_dict(data)
+    return validate_dict(data, mode=mode)

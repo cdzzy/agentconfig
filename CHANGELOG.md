@@ -2,6 +2,41 @@
 
 All notable changes to AgentConfig are documented in this file.
 
+## [2.4.0] - 2026-10-02
+
+### Added
+
+- **Strict validation mode** (`agentconfig.validation.strict`): optional
+  [Pydantic](https://docs.pydantic.dev/) v2 models selected via
+  `validate_dict(data, mode="strict")`, `validate_config(path, mode=...)`,
+  or the `Strictness` enum. Pydantic is a new optional extra:
+  `pip install "cdzzy-agentconfig[strict]"`.
+  - `ConfigDict(strict=True, extra="forbid")` throughout — no silent type
+    coercion (`"20"` never passes as an integer) and unknown fields are
+    rejected, so schema drift fails loud instead of slipping through.
+  - All violations are reported in one pass with precise locations, where
+    the built-in walker stops at the first type mismatch in a subtree.
+  - `ValidationResult` extended with `mode`, `notes`, and `model` — on
+    strict success, `result.model` is a typed `AgentConfigModel` you can
+    access attribute-style and `model_dump()` back to a plain dict.
+  - 6 strict models mirror the JSON Schema (AgentIntent / ModelConfig /
+    Constraint / MCPServerConfig / ToolPolicy / AgentConfig); JSON Schema
+    `"number"` fields accept both ints and floats via a `Union` type, so
+    `temperature: 1` stays valid.
+  - Graceful fallback: without pydantic installed, strict-mode requests
+    fall back to the built-in validator and the result carries an
+    explanatory note in `result.notes` — pipelines never hard-fail on an
+    optional extra.
+  - `normalize_mode()` coerces `None` / `"lenient"` / `"strict"` /
+    `Strictness` members; unknown values raise `ValueError`.
+
+### Changed
+
+- `pydantic>=2.5` added to the `dev` extra so CI always covers the strict
+  validation path.
+- `ValidationResult.__str__` now appends a `Notes:` block when notes are
+  present; output is unchanged otherwise.
+
 ## [2.3.1] - 2026-09-25
 
 ### Changed
