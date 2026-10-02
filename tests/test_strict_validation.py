@@ -105,6 +105,16 @@ class TestStrictnessEnum:
         assert Strictness.STRICT == "strict"
         assert f"mode={Strictness.LENIENT}" == "mode=lenient"
 
+    def test_str_format_stable_across_python_versions(self):
+        # str-mixin enums format differently on Python 3.11+ (where
+        # Enum.__format__ defers to __str__) versus <=3.10 (where it uses
+        # the mixin type). Strictness pins __str__ to self.value, so all
+        # three renderings must agree on every supported version.
+        assert str(Strictness.STRICT) == "strict"
+        assert str(Strictness.LENIENT) == "lenient"
+        assert f"{Strictness.STRICT}" == "strict"
+        assert "{}".format(Strictness.STRICT) == "strict"
+
     def test_lookup_by_value(self):
         assert Strictness("strict") is Strictness.STRICT
 

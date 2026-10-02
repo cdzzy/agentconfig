@@ -50,10 +50,21 @@ class Strictness(str, enum.Enum):
 
     ``LENIENT`` — built-in JSON Schema walker (default, zero deps).
     ``STRICT`` — Pydantic v2 strict models (optional dependency).
+
+    Inherits ``str`` so members compare equal to plain strings and drop
+    straight into CLI arguments, logs, and JSON. ``__str__`` is defined
+    explicitly because the default ``Enum.__str__`` renders
+    ``"Strictness.STRICT"``, and the format protocol picks different
+    ``__str__``/``__format__`` combinations on Python <3.11 vs >=3.11 —
+    pinning it to ``self.value`` keeps ``f"{mode}"``, ``str(mode)``, and
+    ``"{}".format(mode)`` identical on every supported version.
     """
 
     LENIENT = "lenient"
     STRICT = "strict"
+
+    def __str__(self) -> str:
+        return self.value
 
 
 def normalize_mode(mode: Optional[Any] = None) -> Strictness:
