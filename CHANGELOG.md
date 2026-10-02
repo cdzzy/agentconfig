@@ -2,6 +2,20 @@
 
 All notable changes to AgentConfig are documented in this file.
 
+## [2.4.1] - 2026-10-02
+
+### Fixed
+
+- **JSON Schema `pattern` semantics** (`agentconfig.validation.validator`): the built-in walker used `re.match`, which only anchors at the start of the string; the JSON Schema spec defines `pattern` as an *unanchored* substring match, so schemas with non-anchored patterns (e.g. `"abc"` should match `"xabc"`) now validate correctly and agree with the strict (pydantic) path.
+- **PREFERENCES.md duplicate keys** (`agentconfig.portable`): keys that normalize to the same value (e.g. `Preferred Name` vs `preferred_name`) previously overwrote each other silently; the parser now raises a clear `ValueError`.
+- **Atomic file writes** (`agentconfig.portable`): `LESSONS.md` and `PREFERENCES.md` are written via a temp-file + rename, so a crash mid-write can no longer leave a truncated file.
+
+### Changed
+
+- The bundled JSON Schema is loaded once and cached (schema is read-only); `get_schema()` returns a defensive copy.
+- `validate_dict` / `validate_config` `mode` parameters now carry a precise `Optional[Union[str, "Strictness"]]` annotation instead of `Optional[Any]`.
+- Release workflow: PyPI publish tolerates re-pushes of the same tag (`skip-existing: true`) and a `concurrency` group serializes overlapping releases.
+
 ## [2.4.0] - 2026-10-02
 
 ### Added

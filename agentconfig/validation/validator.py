@@ -7,10 +7,18 @@ providing clear error messages for invalid configs.
 
 from __future__ import annotations
 
+import copy
+import functools
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, Union
+
+if TYPE_CHECKING:
+    # Only for type-checking: strict.py imports this module, so a runtime
+    # top-level import would create a circular dependency at load time.
+    from agentconfig.validation.strict import Strictness
 
 # ── Schema path ──────────────────────────────────────────────────────────
 
@@ -18,8 +26,9 @@ _SCHEMA_DIR = Path(__file__).resolve().parent.parent.parent / "schemas"
 _AGENT_CONFIG_SCHEMA = _SCHEMA_DIR / "agent-config.schema.json"
 
 
+@functools.lru_cache(maxsize=1)
 def _load_schema() -> dict:
-    """Load the AgentConfig JSON Schema."""
+    """Load the AgentConfig JSON Schema (cached — the schema is a read-only asset)."""
     with open(_AGENT_CONFIG_SCHEMA, "r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -37,7 +46,7 @@ def get_schema() -> dict:
         schema = get_schema()
         print(schema["title"])
     """
-    return _load_schema()
+    return copy.deepcopy(_load_schema())
 
 
 def schema_file() -> str:
@@ -160,10 +169,10 @@ def _validate_dict_builtin(data: dict, schema: dict, path: str = "", root_schema
             value=data,
         ))
 
-    # Pattern check (strings)
+    # Pattern check (strings) — JSON Schema semantics are non-anchored,
+    # so re.search (not re.match) is the correct translation.
     if "pattern" in schema and isinstance(data, str):
-        import re
-        if not re.match(schema["pattern"], data):
+        if not re.search(schema["pattern"], data):
             errors.append(ValidationError(
                 path=path,
                 message=f"String does not match pattern {schema['pattern']!r}",
@@ -300,7 +309,7 @@ def _validate_with_refs(data: Any, schema: dict, root_schema: dict, path: str = 
 
 # ── Public API ───────────────────────────────────────────────────────────
 
-def validate_dict(data: dict, mode: Optional[Any] = None) -> ValidationResult:
+def validate_dict(data: dict, mode: Optional[Union[str, "Strictness"]] = None) -> ValidationResult:
     """
     Validate a dict representing an AgentConfig against the JSON Schema.
 
@@ -350,7 +359,7 @@ def validate_dict(data: dict, mode: Optional[Any] = None) -> ValidationResult:
     )
 
 
-def validate_config(path: str, mode: Optional[Any] = None) -> ValidationResult:
+def validate_config(path: str, mode: Optional[Union[str, "Strictness"]] = None) -> ValidationResult:
     """
     Validate an agent config file (JSON, YAML, or TOML) against the schema.
 

@@ -57,6 +57,7 @@ Usage::
 from __future__ import annotations
 
 import json
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -114,12 +115,27 @@ ALL_SUBDIRS = [
 _PREF_RE = re.compile(r"^\s*[-*]\s+\*\*(.+?)\*\*:\s*(.+)$", re.MULTILINE)
 
 
+def _atomic_write(path: Path, content: str) -> None:
+    """Write a file atomically (tmp file + rename) so a crash mid-write
+    can never leave a truncated file behind."""
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(content, encoding="utf-8")
+    os.replace(tmp, path)
+
+
 def _parse_preferences_md(text: str) -> Dict[str, str]:
     """Parse PREFERENCES.md into a dict of preference key -> value."""
     prefs: Dict[str, str] = {}
     for m in _PREF_RE.finditer(text):
         key = m.group(1).strip().lower().replace(" ", "_")
         value = m.group(2).strip()
+        if key in prefs:
+            # "Preferred Name" and "preferred_name" normalize to the same key;
+            # silently overwriting one is a data-loss bug, so fail loudly.
+            raise ValueError(
+                f"Duplicate preference key after normalization: {key!r} "
+                f"(found in PREFERENCES.md)"
+            )
         prefs[key] = value
     return prefs
 
@@ -452,9 +468,7 @@ class AgentDir:
             if lesson.get("rationale"):
                 lines.append(f"\n*Rationale: {lesson['rationale']}*")
             lines.append("")
-        (self.path / FILE_LESSONS_MD).write_text(
-            "\n".join(lines), encoding="utf-8"
-        )
+        _atomic_write(self.path / FILE_LESSONS_MD, "\n".join(lines))
 
     # ── Preferences ─────────────────────────────────────────────────
 
@@ -469,7 +483,7 @@ class AgentDir:
         """Save personal preferences to PREFERENCES.md."""
         pref_path = self.path / FILE_PREFERENCES_MD
         pref_path.parent.mkdir(parents=True, exist_ok=True)
-        pref_path.write_text(_render_preferences_md(prefs), encoding="utf-8")
+        _atomic_write(pref_path, _render_preferences_md(prefs))
 
     # ── Permissions ─────────────────────────────────────────────────
 
