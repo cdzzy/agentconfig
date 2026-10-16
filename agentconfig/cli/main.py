@@ -679,11 +679,24 @@ def cmd_init(args: argparse.Namespace) -> int:
     return 0
 
 
+def _package_version() -> str:
+    """Return the package version (single source of truth: pyproject/metadata)."""
+    from agentconfig import __version__
+
+    return __version__
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser."""
     parser = argparse.ArgumentParser(
         prog="agentconfig",
         description="AgentConfig CLI - Configure AI agents without writing code",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"agentconfig {_package_version()}",
+        help="Show the agentconfig version and exit",
     )
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")

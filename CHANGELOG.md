@@ -2,6 +2,31 @@
 
 All notable changes to AgentConfig are documented in this file.
 
+## [2.5.0] - 2026-10-16
+
+### Added
+
+- **`agentconfig --version` CLI flag** (`agentconfig.cli.main`): prints the
+  package version and exits 0 — previously the CLI had no way to report its
+  own version.
+
+### Fixed
+
+- **Version drift between `__version__` and `pyproject.toml`**:
+  `agentconfig.__version__` was a hard-coded literal that silently drifted
+  from the declared package version (e.g. `2.4.0` vs `2.4.1`). It is now
+  derived from `pyproject.toml` (single source of truth) in source
+  checkouts / editable installs, falling back to `importlib.metadata` for
+  regular installed copies — so the two can never disagree again.
+- **CLI version source**: `_package_version()` now reuses the canonical
+  `agentconfig.__version__` instead of duplicating metadata/pyproject
+  lookups that could disagree.
+
+### Added tests
+
+- `tests/test_cli_version.py`: `--version` flag output, and a regression
+  guard asserting `agentconfig.__version__ == pyproject.toml` version.
+
 ## [2.4.1] - 2026-10-02
 
 ### Fixed
