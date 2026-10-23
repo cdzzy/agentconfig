@@ -136,9 +136,9 @@ def cmd_create(args: argparse.Namespace) -> int:
         "system_prompt": config.system_prompt,
         "constraints": [
             {
-                "type": c.type.value,
-                "action": c.action.value,
-                "params": c.params,
+                "type": c["type"],
+                "action": c["action"],
+                "params": c.get("params"),
             }
             for c in config.constraints
         ],
@@ -945,8 +945,11 @@ def main():
 def _configure_utf8_output() -> None:
     """Reconfigure stdio to UTF-8 (Windows consoles default to cp936/gbk)."""
     for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
         try:
-            stream.reconfigure(encoding="utf-8")
+            reconfigure(encoding="utf-8")
         except (AttributeError, ValueError):
             pass
 

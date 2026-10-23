@@ -422,7 +422,7 @@ def validate_config(path: str, mode: Optional[Union[str, "Strictness"]] = None) 
                 import tomllib  # Python 3.11+
             except ImportError:
                 try:
-                    import tomli as tomllib  # Python < 3.11
+                    import tomli as tomllib  # type: ignore[no-redef]  # Python < 3.11
                 except ImportError:
                     return ValidationResult(
                         valid=False,

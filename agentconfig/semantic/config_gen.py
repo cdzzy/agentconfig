@@ -229,7 +229,7 @@ class AgentConfig:
             import tomllib  # Python 3.11+
         except ImportError:
             try:
-                import tomli as tomllib  # Python < 3.11
+                import tomli as tomllib  # type: ignore[no-redef]  # Python < 3.11
             except ImportError:
                 raise ImportError(
                     "TOML support requires Python 3.11+ or 'tomli'. Install with: pip install tomli"

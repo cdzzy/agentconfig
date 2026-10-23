@@ -2,6 +2,32 @@
 
 All notable changes to AgentConfig are documented in this file.
 
+## [2.5.1] - 2026-10-23
+
+### Fixed
+
+- **`agentconfig generate` crashed while printing the generated config**
+  (`agentconfig.cli.main`): `AgentConfig.constraints` holds serialized dicts
+  (see `semantic/config_gen.py`), but the CLI accessed each entry with
+  attribute syntax (`c.type.value` / `c.action.value`), raising `AttributeError`
+  at runtime. The output block now indexes the dicts directly.
+- **`_configure_utf8_output()` robustness** (`agentconfig.cli.main`):
+  `reconfigure` only exists on `io.TextIOWrapper`, not the base `TextIO` type;
+  the helper now probes for the attribute instead of calling it blindly.
+
+### Changed
+
+- **mypy now runs in CI** (`.github/workflows/ci.yml`): the type checker was
+  configured in `pyproject.toml` but never executed. The lint job now installs
+  mypy and checks the `agentconfig` package. The new `[tool.mypy]` block uses
+  `python_version = "3.10"` (the mypy 2.x floor; 3.9 runtime compat is kept via
+  `from __future__ import annotations`) with `ignore_missing_imports = true`,
+  and the Python<3.11 `import tomli as tomllib` compatibility alias is
+  annotated `# type: ignore[no-redef]` so the union import idiom type-checks.
+- **CI concurrency guard & least privilege** (`.github/workflows/ci.yml`):
+  push/PR runs now cancel stale in-progress runs for the same ref and the
+  workflow only requests `contents: read`.
+
 ## [2.5.0] - 2026-10-16
 
 ### Added

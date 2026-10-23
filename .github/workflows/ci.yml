@@ -6,9 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   lint:
-    name: Lint (ruff)
+    name: Lint (ruff + mypy)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +31,12 @@ jobs:
 
       - name: Run ruff
         run: ruff check .
+
+      - name: Install mypy
+        run: pip install mypy
+
+      - name: Type check (mypy)
+        run: mypy agentconfig
 
   test:
     name: Test (Python ${{ matrix.python-version }})
