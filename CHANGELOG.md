@@ -27,6 +27,13 @@ All notable changes to AgentConfig are documented in this file.
 - **CI concurrency guard & least privilege** (`.github/workflows/ci.yml`):
   push/PR runs now cancel stale in-progress runs for the same ref and the
   workflow only requests `contents: read`.
+- **Release workflow now verifies before publishing**
+  (`.github/workflows/release.yml`): the tag must match the version declared
+  in `pyproject.toml`, and `ruff check .` plus `pytest tests/` run before the
+  sdist/wheel build — previously the tag-push pipeline only built and pushed,
+  so a mis-tagged or failing test could ship to PyPI. Version source is
+  synced: `pyproject.toml` now carries 2.5.1 (the CHANGELOG was already
+  updated for it).
 
 ## [2.5.0] - 2026-10-16
 
