@@ -2,6 +2,56 @@
 
 All notable changes to AgentConfig are documented in this file.
 
+## [2.6.0] - 2026-11-01
+
+### Added
+
+- **Organization / team configuration sharing** (`agentconfig.org`): deployments
+  rarely configure every agent from scratch — policy is decided at the org
+  level, refined per team, then specialized per agent. This module composes
+  those layers into one effective config.
+  - `LayeredConfigResolver` — `add_dict` / `add_config` / `add_file` /
+    `from_directory("configs/")`, with precedence
+    `organization` → `team` → `agent`. Layer order is applied by level, so
+    insertion order never lets a low layer win.
+  - `resolve()` returns the merged dict; `resolve_config()` validates it
+    against the JSON Schema and returns an `AgentConfig`.
+  - `explain()` reports, per top-level field, which layers defined it and
+    which one won — "where did this value come from?" without diffing files.
+  - `ConfigLayer` — build a layer from a dict, an `AgentConfig`, or a
+    JSON/YAML/TOML file.
+- **Monotonic restriction merge rules** (`merge_config_data`): a lower layer
+  can tighten a parent's policy but never loosen it.
+  - `constraints` merge **by `id`** instead of replacing, so an agent cannot
+    silently drop an organization-wide guardrail by omitting it (same `id`
+    from the child wins, keeping the audit trail intact).
+  - `tools_disabled` takes the **union**, so a child cannot re-enable a tool
+    the parent blocked.
+  - `tools_enabled` **intersects** with the parent's allowlist when the
+    parent declares one, so a child can only narrow the tool surface.
+  - `deep_merge()` and `merge_constraints()` are exported for direct use.
+- **`load_raw_dict(path, format=None)`** (`agentconfig.loader`) — reads a
+  config file as a plain dict without applying `AgentConfig` defaults. Needed
+  by the layer loader: going through `AgentConfig` backfills
+  `name='My Agent'`, `max_turns=20`, model defaults, and a sparse team layer
+  would then overwrite the organization's real values.
+
+### Changed
+
+- **Minimum supported Python is now 3.10** (`requires-python = ">=3.10"`).
+  Python 3.9 reached end-of-life on 2025-10-31 and GitHub's
+  `actions/python-versions` no longer publishes 3.9 builds, so the CI matrix's
+  3.9 `setup-python` step fails to provision an interpreter. The 3.9
+  classifier was dropped; the CI matrix is now 3.10 / 3.11 / 3.12 / 3.13.
+
+### Testing
+
+- 33 new tests (`tests/test_org_layers.py`): layer validation, deep merge,
+  constraint inheritance by id, the three restrictive tool-policy rules,
+  precedence across levels and within a level, file and directory loading,
+  `resolve_config()` validation, and provenance reporting.
+- Full suite: **344 passed**; `ruff check .` and `mypy agentconfig` clean.
+
 ## [2.5.1] - 2026-10-23
 
 ### Fixed

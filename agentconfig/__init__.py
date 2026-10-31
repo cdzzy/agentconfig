@@ -22,6 +22,14 @@ from agentconfig.hotreload import (
 )
 from agentconfig.loader import list_formats, load_config, save_config
 from agentconfig.mcp import MCPRouter, MCPServerConfig, ToolPolicy, substitute_env
+from agentconfig.org import (
+    LAYER_LEVELS,
+    ConfigLayer,
+    LayeredConfigResolver,
+    deep_merge,
+    merge_config_data,
+    merge_constraints,
+)
 from agentconfig.portable import AgentDir, init_agent_dir, load_agent_dir, save_agent_dir
 from agentconfig.runtime.executor import AgentExecutor
 from agentconfig.runtime.monitor import AgentMonitor, RunRecord
@@ -93,6 +101,12 @@ __all__ = [
     "load_config",
     "save_config",
     "list_formats",
+    "LayeredConfigResolver",
+    "ConfigLayer",
+    "LAYER_LEVELS",
+    "deep_merge",
+    "merge_config_data",
+    "merge_constraints",
     "A2ACard",
     "A2ASkill",
     "generate_a2a_card",

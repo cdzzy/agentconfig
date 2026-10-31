@@ -210,6 +210,59 @@ pytest tests/ -v
 
 ---
 
+## Team / Organization Config Sharing
+
+Real deployments don't configure every agent from scratch: policy is decided
+organization-wide, refined per team, then specialized per agent. Compose those
+layers instead of copy-pasting configs.
+
+```python
+from agentconfig.org import LayeredConfigResolver
+
+resolver = (
+    LayeredConfigResolver()
+    .add_file("configs/organization.yaml", "organization")
+    .add_file("configs/team.yaml", "team")
+    .add_file("configs/agent.yaml", "agent")
+)
+
+config = resolver.resolve_config()   # schema-validated AgentConfig
+print(resolver.explain())            # which layer set which value
+```
+
+Or load a whole directory at once — missing layers are skipped, so a
+deployment can define only what it needs:
+
+```python
+resolver = LayeredConfigResolver.from_directory("configs/")
+```
+
+**Merge rules are monotonic: a child can tighten a parent's policy, never
+loosen it.**
+
+| Field | Rule | Why |
+|-------|------|-----|
+| `constraints` | Merge **by `id`** (same id from the child wins) | An agent cannot drop an organization-wide guardrail by omitting it |
+| `tools_disabled` | **Union** | A child cannot re-enable a tool the parent blocked |
+| `tools_enabled` | **Intersect** with the parent allowlist | A child can only narrow the tool surface, never widen it |
+| everything else | Deep merge, child wins | Normal override semantics |
+
+`explain()` answers "where did this value come from?" — useful when auditing
+why a resolved config ended up blocking something:
+
+```python
+{
+  "name":    {"source": "agent",        "layers": ["organization", "agent"], "value": "billing-agent"},
+  "model":   {"source": "team",         "layers": ["organization", "team"],  "value": {...}},
+  "max_turns": {"source": "organization", "layers": ["organization"],        "value": 10},
+}
+```
+
+`deep_merge`, `merge_constraints`, and `merge_config_data` are exported if you
+need the same semantics in your own tooling.
+
+---
+
 ## Multi-Format Configs
 
 AgentConfig supports JSON, YAML, and TOML out of the box:
@@ -348,7 +401,7 @@ does.
 - [x] ~~Export to LangChain prompt template format~~ ✅
 - [x] **A2A Protocol export** (`agentconfig export-a2a`)
 - [x] ~~Skill Seekers import~~ ✅ (import from Claude Skills/SKILL.md)
-- [ ] Team/organization config sharing
+- [x] **Team/organization config sharing** (`LayeredConfigResolver` — organization → team → agent inheritance with monotonic restriction merges) ✅ (v2.6.0)
 
 ---
 

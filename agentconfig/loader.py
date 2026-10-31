@@ -132,6 +132,41 @@ _SAVERS = {
 
 # ── Public API ───────────────────────────────────────────────────────────
 
+def load_raw_dict(path: str, format: Optional[str] = None) -> dict:
+    """
+    Load a config file as a raw dict, without applying AgentConfig defaults.
+
+    Unlike :func:`load_config`, this returns exactly what the file declares.
+    That matters when the file is one layer of an inherited configuration
+    (see :mod:`agentconfig.org`): backfilling ``AgentConfig`` defaults would
+    make a sparse team layer silently override values set by the
+    organization layer.
+
+    Args:
+        path: Path to the configuration file (.json / .yaml / .yml / .toml).
+        format: Optional format override ("json", "yaml", "toml").
+
+    Returns:
+        The file contents as a plain dict.
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        ValueError: If the format cannot be detected or the root is not a mapping.
+        ImportError: If a format's optional dependency is missing.
+    """
+    filepath = Path(path)
+    if not filepath.exists():
+        raise FileNotFoundError(f"Config file not found: {path}")
+
+    fmt = _detect_format(path, format)
+    data = _LOADERS[fmt](path)
+    if not isinstance(data, dict):
+        raise ValueError(
+            f"Config root must be a mapping, got {type(data).__name__}: {path}"
+        )
+    return data
+
+
 def load_config(path: str, format: Optional[str] = None) -> AgentConfig:
     """
     Load an AgentConfig from a file.

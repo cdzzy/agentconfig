@@ -220,8 +220,58 @@ python -m agentconfig.ui
 - [x] `.\agent/` 便携目录规范（[docs/AGENT_SPEC.md](docs/AGENT_SPEC.md)）
 - [x] SKILL.md 导入兼容（SkillImporter）
 - [x] A2A（Agent2Agent）Card 导出
+- [x] **团队/组织配置共享**（`LayeredConfigResolver`：组织 → 团队 → 智能体三层继承，且只收紧不放宽的合并规则）✅ (v2.6.0)
 - [ ] 配置模板市场（社区共享）
 - [ ] 自动重要性评分（LLM Judge）
+
+---
+
+## 团队 / 组织配置共享
+
+真实部署不会为每个智能体从零写配置：策略先由组织决定，团队再细化，最后才到
+具体智能体。与其复制粘贴配置，不如把这几层组合起来。
+
+```python
+from agentconfig.org import LayeredConfigResolver
+
+resolver = (
+    LayeredConfigResolver()
+    .add_file("configs/organization.yaml", "organization")
+    .add_file("configs/team.yaml", "team")
+    .add_file("configs/agent.yaml", "agent")
+)
+
+config = resolver.resolve_config()   # 经 schema 校验的 AgentConfig
+print(resolver.explain())            # 哪个层设置了哪个字段
+```
+
+也可以一次加载整个目录 —— 缺失的层会被跳过，所以只定义用得到的层即可：
+
+```python
+resolver = LayeredConfigResolver.from_directory("configs/")
+```
+
+**合并规则是单调的：下级只能收紧上级策略，永远不能放松。**
+
+| 字段 | 规则 | 原因 |
+|------|------|------|
+| `constraints` | 按 `id` **合并**（同 id 时下级覆盖） | 智能体不能靠"不写"来丢掉组织级护栏 |
+| `tools_disabled` | 取**并集** | 下级无法重新启用上级禁用的工具 |
+| `tools_enabled` | 与上级白名单**求交集** | 下级只能收窄工具面，不能扩大 |
+| 其余字段 | 深度合并，下级优先 | 常规覆盖语义 |
+
+`explain()` 回答"这个值是哪来的"，排查"为什么被拦了"时很有用：
+
+```python
+{
+  "name":      {"source": "agent",        "layers": ["organization", "agent"], "value": "billing-agent"},
+  "model":     {"source": "team",         "layers": ["organization", "team"],  "value": {...}},
+  "max_turns": {"source": "organization", "layers": ["organization"],          "value": 10},
+}
+```
+
+如果需要在自有工具里复用同样的语义，可直接使用导出的 `deep_merge`、
+`merge_constraints` 与 `merge_config_data`。
 
 ---
 
