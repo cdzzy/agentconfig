@@ -2,6 +2,53 @@
 
 All notable changes to AgentConfig are documented in this file.
 
+## [2.7.0] - 2026-11-06
+
+### Added
+
+- **DSPy export** (`agentconfig/dspy_export.py`): bridges AgentConfig's
+  "business intent → configuration" pipeline to DSPy's
+  "prompt → optimizable program" pipeline. DSPy is not a dependency — only
+  source text is generated.
+  - `export_dspy_program(config)` returns a self-contained Python module:
+    - a `dspy.Signature` subclass whose docstring carries the system prompt
+      (or the prompt generated from the intent) plus every constraint
+      description;
+    - a `dspy.Module` subclass using `ChainOfThought` by default
+      (`reasoning=False` emits `Predict`);
+    - `LM_ARGS` derived from `ModelConfig`, mapping providers to LiteLLM-style
+      model strings (`openai/…`, `anthropic/…`, `azure/…`, `ollama_chat/…`,
+      `gemini/…`, …) and passing `temperature`, `max_tokens`, and `api_base`;
+    - `check_constraints()` — a dependency-free mirror of `ConstraintEngine`
+      for forbidden keyword/topic, required keyword, min/max length,
+      escalation, tone, and custom-regex rules; `semantic_judge` constraints
+      are documented as requiring manual wiring;
+    - `build_program()` that configures `dspy.LM(**LM_ARGS)` and constructs
+      the module;
+    - an optimizer template for `BootstrapFewShotWithRandomSearch`, `GEPA`
+      and `SIMBA` (optional).
+  - `save_dspy_program(config, path)` writes the generated module and creates
+    parent directories.
+  - Class names are derived from the config name (or `module_name`),
+    sanitised to valid CamelCase identifiers; non-ASCII names fall back to
+    `Agent<config_id>`.
+  - Exported from the package root (`export_dspy_program`,
+    `save_dspy_program`).
+
+### Changed
+
+- README gained an "Exporting to DSPy" section and a roadmap entry.
+
+### Testing
+
+- 23 new tests (`tests/test_dspy_export.py`): source compiles, class
+  naming/sanitisation, prompt and constraint embedding, intent fallback,
+  Predict/ChainOfThought toggle, optimizer inclusion, tools comments,
+  provider→model mapping (OpenAI/Anthropic/Ollama/unknown/prefixed), metadata,
+  empty constraints, file writing, and runtime execution against a fake
+  `dspy` module (program forward pass, constraint mirror, semantic-judge
+  no-op).
+
 ## [2.6.0] - 2026-11-01
 
 ### Added

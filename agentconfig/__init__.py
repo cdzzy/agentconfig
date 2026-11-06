@@ -14,6 +14,7 @@ from agentconfig.adapters.frameworks import (
     wrap_crewai_agent,
     wrap_langgraph_node,
 )
+from agentconfig.dspy_export import export_dspy_program, save_dspy_program
 from agentconfig.hotreload import (
     ConfigWatcher,
     RuntimeConfigStore,
@@ -131,4 +132,6 @@ __all__ = [
     "wrap_autogen_reply",
     "wrap_crewai_agent",
     "wrap_langgraph_node",
+    "export_dspy_program",
+    "save_dspy_program",
 ]

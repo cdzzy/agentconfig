@@ -388,6 +388,47 @@ does.
 
 ---
 
+## Exporting to DSPy
+
+AgentConfig compiles business intent into a configuration; DSPy compiles
+prompts into programs. `export_dspy_program` bridges the two: it turns an
+`AgentConfig` into a runnable DSPy skeleton, so the same constraints that guard
+the runtime also shape the prompt a DSPy optimizer tunes.
+
+```python
+from agentconfig import AgentConfig, save_dspy_program
+
+config = AgentConfig.load("support_bot.json")
+save_dspy_program(config, "support_bot_dspy.py")
+```
+
+The generated file is self-contained (DSPy is not imported at export time):
+
+- `SupportBotSignature(dspy.Signature)` — the docstring carries the system
+  prompt and every constraint description; fields are `user_input` → `answer`.
+- `SupportBotProgram(dspy.Module)` — uses `ChainOfThought` by default; pass
+  `reasoning=False` for plain `Predict`.
+- `LM_ARGS` — provider mapped to a LiteLLM-style model string
+  (`openai/...`, `anthropic/...`, `ollama_chat/...`), plus temperature,
+  max tokens, and `api_base` when set.
+- `check_constraints(text)` — a dependency-free mirror of `ConstraintEngine`
+  covering keyword, length, tone, escalation, and custom-regex rules.
+  `semantic_judge` constraints must be wired by hand.
+- `build_program()` — configures `dspy.LM(**LM_ARGS)` and returns the module.
+- An optimizer template using `BootstrapFewShotWithRandomSearch`, `GEPA`, or
+  `SIMBA` (omit with `include_optimizer=False`).
+
+Then, with DSPy installed:
+
+```bash
+pip install dspy
+python support_bot_dspy.py
+```
+
+`module_name` overrides the generated class base name.
+
+---
+
 ## Roadmap
 
 - [x] CLI: `agentconfig serve` and `agentconfig watch` (hot-reload)
@@ -402,6 +443,7 @@ does.
 - [x] **A2A Protocol export** (`agentconfig export-a2a`)
 - [x] ~~Skill Seekers import~~ ✅ (import from Claude Skills/SKILL.md)
 - [x] **Team/organization config sharing** (`LayeredConfigResolver` — organization → team → agent inheritance with monotonic restriction merges) ✅ (v2.6.0)
+- [x] **DSPy export** (`export_dspy_program` / `save_dspy_program` — Signature + Module skeleton with LM mapping, constraint mirror, and optimizer template) ✅ (v2.7.0)
 
 ---
 
